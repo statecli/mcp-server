@@ -16,6 +16,10 @@ import { FileTracker } from './file-tracker';
 import { ErrorRecovery } from './error-recovery';
 import { SessionMemory } from './session-memory';
 import { GitIntegration } from './git-integration';
+import { TestAwareness } from './test-awareness';
+import { DependencyTracker } from './dependency-tracker';
+import { RollbackPreview } from './rollback-preview';
+import { CrossFileImpact } from './cross-file-impact';
 import { StateCLIConfig } from './types';
 
 const ENHANCED_TOOLS: Tool[] = [
@@ -227,6 +231,140 @@ const ENHANCED_TOOLS: Tool[] = [
       },
       required: []
     }
+  },
+
+  // NEW v0.3.0: Test awareness tools
+  {
+    name: 'statecli_run_tests',
+    description: 'Run tests and track results. Correlates with recent code changes.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        files: { type: 'array', items: { type: 'string' }, description: 'Specific test files to run' },
+        grep: { type: 'string', description: 'Filter tests by pattern' }
+      },
+      required: []
+    }
+  },
+  {
+    name: 'statecli_test_impact',
+    description: 'Analyze which tests are affected by a changed file.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', description: 'Changed file path' }
+      },
+      required: ['file']
+    }
+  },
+  {
+    name: 'statecli_suggest_tests',
+    description: 'Suggest which tests to run based on recent changes.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  },
+
+  // NEW v0.3.0: Dependency tracking tools
+  {
+    name: 'statecli_analyze_dependencies',
+    description: 'Analyze what files depend on a given file. Shows impact of changes.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', description: 'File to analyze' }
+      },
+      required: ['file']
+    }
+  },
+  {
+    name: 'statecli_dependency_tree',
+    description: 'Get dependency tree for a file.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', description: 'File path' },
+        depth: { type: 'number', description: 'Max depth (default: 3)' }
+      },
+      required: ['file']
+    }
+  },
+  {
+    name: 'statecli_find_circular',
+    description: 'Find circular dependencies in the project.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  },
+
+  // NEW v0.3.0: Rollback preview tools
+  {
+    name: 'statecli_preview_undo',
+    description: 'Preview what will happen if you undo N steps. Shows diff before executing.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        entity: { type: 'string', description: 'Entity identifier' },
+        steps: { type: 'number', description: 'Steps to preview undoing (default: 1)' }
+      },
+      required: ['entity']
+    }
+  },
+  {
+    name: 'statecli_simulate_undo',
+    description: 'Simulate undo without executing. Shows resulting state and side effects.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        entity: { type: 'string', description: 'Entity identifier' },
+        steps: { type: 'number', description: 'Steps to simulate (default: 1)' }
+      },
+      required: ['entity']
+    }
+  },
+
+  // NEW v0.3.0: Cross-file impact tools
+  {
+    name: 'statecli_predict_impact',
+    description: 'Predict impact of a proposed change. Shows affected files and breaking changes.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', description: 'File to change' },
+        change_type: { type: 'string', enum: ['modify', 'rename', 'delete', 'move'], description: 'Type of change' },
+        symbol: { type: 'string', description: 'Specific symbol being changed (optional)' },
+        new_name: { type: 'string', description: 'New name if renaming (optional)' }
+      },
+      required: ['file', 'change_type']
+    }
+  },
+  {
+    name: 'statecli_is_safe',
+    description: 'Check if a proposed change is safe to make.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', description: 'File to change' },
+        change_type: { type: 'string', enum: ['modify', 'rename', 'delete', 'move'], description: 'Type of change' },
+        symbol: { type: 'string', description: 'Specific symbol (optional)' }
+      },
+      required: ['file', 'change_type']
+    }
+  },
+  {
+    name: 'statecli_safe_change_order',
+    description: 'Get recommended order for changing multiple files safely.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        files: { type: 'array', items: { type: 'string' }, description: 'Files to change' }
+      },
+      required: ['files']
+    }
   }
 ];
 
@@ -237,6 +375,10 @@ export class EnhancedStateCLIMCPServer {
   private errorRecovery: ErrorRecovery;
   private sessionMemory: SessionMemory;
   private gitIntegration: GitIntegration;
+  private testAwareness: TestAwareness;
+  private dependencyTracker: DependencyTracker;
+  private rollbackPreview: RollbackPreview;
+  private crossFileImpact: CrossFileImpact;
 
   constructor(config?: Partial<StateCLIConfig>) {
     this.statecli = new StateCLI(config);
@@ -244,9 +386,13 @@ export class EnhancedStateCLIMCPServer {
     this.errorRecovery = new ErrorRecovery(this.statecli);
     this.sessionMemory = new SessionMemory(this.statecli);
     this.gitIntegration = new GitIntegration(this.statecli);
+    this.testAwareness = new TestAwareness(this.statecli);
+    this.dependencyTracker = new DependencyTracker(this.statecli);
+    this.rollbackPreview = new RollbackPreview(this.statecli);
+    this.crossFileImpact = new CrossFileImpact(this.statecli);
     
     this.server = new Server(
-      { name: 'statecli-enhanced', version: '2.0.0' },
+      { name: 'statecli-enhanced', version: '3.0.0' },
       { capabilities: { tools: {} } }
     );
 
@@ -304,6 +450,36 @@ export class EnhancedStateCLIMCPServer {
             return this.handleGitHistory(args as any);
           case 'statecli_git_checkpoint':
             return this.handleGitCheckpoint(args as any);
+
+          // Test awareness (v0.3.0)
+          case 'statecli_run_tests':
+            return this.handleRunTests(args as any);
+          case 'statecli_test_impact':
+            return this.handleTestImpact(args as any);
+          case 'statecli_suggest_tests':
+            return this.handleSuggestTests();
+
+          // Dependency tracking (v0.3.0)
+          case 'statecli_analyze_dependencies':
+            return this.handleAnalyzeDependencies(args as any);
+          case 'statecli_dependency_tree':
+            return this.handleDependencyTree(args as any);
+          case 'statecli_find_circular':
+            return this.handleFindCircular();
+
+          // Rollback preview (v0.3.0)
+          case 'statecli_preview_undo':
+            return this.handlePreviewUndo(args as any);
+          case 'statecli_simulate_undo':
+            return this.handleSimulateUndo(args as any);
+
+          // Cross-file impact (v0.3.0)
+          case 'statecli_predict_impact':
+            return this.handlePredictImpact(args as any);
+          case 'statecli_is_safe':
+            return this.handleIsSafe(args as any);
+          case 'statecli_safe_change_order':
+            return this.handleSafeChangeOrder(args as any);
 
           default:
             return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
@@ -444,6 +620,88 @@ export class EnhancedStateCLIMCPServer {
 
   private handleGitCheckpoint(args: { name?: string }) {
     const result = this.gitIntegration.createGitCheckpoint(args.name);
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+
+  // Test awareness handlers (v0.3.0)
+  private handleRunTests(args: { files?: string[]; grep?: string }) {
+    const result = this.testAwareness.runTests({ files: args.files, grep: args.grep, trackChanges: true });
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+
+  private handleTestImpact(args: { file: string }) {
+    const result = this.testAwareness.analyzeTestImpact(args.file);
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+
+  private handleSuggestTests() {
+    const result = this.testAwareness.suggestTests();
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+
+  // Dependency tracking handlers (v0.3.0)
+  private handleAnalyzeDependencies(args: { file: string }) {
+    this.dependencyTracker.buildGraph();
+    const result = this.dependencyTracker.analyzeImpact(args.file);
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+
+  private handleDependencyTree(args: { file: string; depth?: number }) {
+    this.dependencyTracker.buildGraph();
+    const result = this.dependencyTracker.getDependencyTree(args.file, args.depth || 3);
+    return { content: [{ type: 'text', text: result }] };
+  }
+
+  private handleFindCircular() {
+    this.dependencyTracker.buildGraph();
+    const cycles = this.dependencyTracker.findCircularDependencies();
+    return { 
+      content: [{ 
+        type: 'text', 
+        text: JSON.stringify({ 
+          found: cycles.length, 
+          cycles: cycles.slice(0, 10) 
+        }, null, 2) 
+      }] 
+    };
+  }
+
+  // Rollback preview handlers (v0.3.0)
+  private handlePreviewUndo(args: { entity: string; steps?: number }) {
+    const result = this.rollbackPreview.previewUndo(args.entity, args.steps || 1);
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+
+  private handleSimulateUndo(args: { entity: string; steps?: number }) {
+    const result = this.rollbackPreview.simulateUndo(args.entity, args.steps || 1);
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+
+  // Cross-file impact handlers (v0.3.0)
+  private handlePredictImpact(args: { file: string; change_type: string; symbol?: string; new_name?: string }) {
+    this.crossFileImpact.buildIndex();
+    const result = this.crossFileImpact.predictImpact({
+      file: args.file,
+      changeType: args.change_type as any,
+      symbol: args.symbol,
+      newValue: args.new_name
+    });
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+
+  private handleIsSafe(args: { file: string; change_type: string; symbol?: string }) {
+    this.crossFileImpact.buildIndex();
+    const result = this.crossFileImpact.isChangeSafe({
+      file: args.file,
+      changeType: args.change_type as any,
+      symbol: args.symbol
+    });
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+
+  private handleSafeChangeOrder(args: { files: string[] }) {
+    this.dependencyTracker.buildGraph();
+    const result = this.crossFileImpact.getSafeChangeOrder(args.files);
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
   }
 

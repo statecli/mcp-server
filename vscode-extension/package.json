@@ -1,0 +1,86 @@
+{
+  "name": "statecli",
+  "displayName": "StateCLI - AI Agent Memory & Undo",
+  "description": "Memory, replay, and undo capability for AI coding agents. One-click MCP server setup.",
+  "version": "0.3.0",
+  "publisher": "statecli",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/statecli/mcp-server"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "mcp",
+    "ai",
+    "agent",
+    "undo",
+    "state",
+    "replay",
+    "claude",
+    "cursor",
+    "windsurf"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "statecli.setup",
+        "title": "StateCLI: Setup MCP Server"
+      },
+      {
+        "command": "statecli.showTools",
+        "title": "StateCLI: Show Available Tools"
+      },
+      {
+        "command": "statecli.checkpoint",
+        "title": "StateCLI: Create Checkpoint"
+      },
+      {
+        "command": "statecli.replay",
+        "title": "StateCLI: Replay Changes"
+      },
+      {
+        "command": "statecli.undo",
+        "title": "StateCLI: Undo Last Change"
+      }
+    ],
+    "configuration": {
+      "title": "StateCLI",
+      "properties": {
+        "statecli.autoSetup": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically configure MCP server on activation"
+        },
+        "statecli.mcpConfigPath": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path to MCP config file (leave empty for default)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "^18.0.0",
+    "typescript": "^5.0.0",
+    "@vscode/vsce": "^2.22.0"
+  }
+}

@@ -19,7 +19,14 @@ from .file_tracker import FileTracker, FileChange
 from .error_recovery import ErrorRecovery, ErrorContext, RecoverySuggestion, AnalysisResult
 from .git_integration import GitIntegration, GitCommit, GitDiff, CommitComparison
 
-__version__ = "0.2.0"
+# LangChain integration (optional import)
+try:
+    from .langchain_tools import get_statecli_tools, get_crewai_tools
+except ImportError:
+    get_statecli_tools = None
+    get_crewai_tools = None
+
+__version__ = "0.3.0"
 __all__ = [
     "StateCLI",
     "StateChange",

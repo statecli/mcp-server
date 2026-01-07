@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StateCLI - Memory & Undo for AI Coding Agents</title>
+    <meta name="description" content="StateCLI gives AI coding agents memory, replay, and undo capabilities. Track state changes, rollback mistakes, analyze dependencies.">
+    <meta name="keywords" content="MCP, AI agent, coding assistant, undo, replay, state management, Claude, Cursor, Windsurf">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .code-block { background: #1e1e1e; border-radius: 8px; }
+        pre { margin: 0; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <!-- Hero -->
+    <div class="gradient-bg py-20">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h1 class="text-5xl font-bold mb-4">StateCLI</h1>
+            <p class="text-2xl mb-8 opacity-90">Memory, Replay & Undo for AI Coding Agents</p>
+            <div class="flex justify-center gap-4 flex-wrap">
+                <a href="https://www.npmjs.com/package/statecli-mcp-server" class="bg-white text-purple-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100">
+                    📦 NPM
+                </a>
+                <a href="https://pypi.org/project/statecli/" class="bg-white text-purple-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100">
+                    🐍 PyPI
+                </a>
+                <a href="https://github.com/statecli/mcp-server" class="bg-gray-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-700">
+                    ⭐ GitHub
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Install -->
+    <div class="max-w-4xl mx-auto px-4 py-16">
+        <h2 class="text-3xl font-bold mb-8 text-center">Quick Install</h2>
+        <div class="code-block p-4 mb-4">
+            <code class="text-green-400">npx statecli-mcp-server</code>
+        </div>
+        <p class="text-gray-400 text-center">Or add to your MCP config:</p>
+        <div class="code-block p-4 mt-4">
+<pre class="text-gray-300"><code>{
+  "mcpServers": {
+    "statecli": {
+      "command": "npx",
+      "args": ["-y", "statecli-mcp-server"]
+    }
+  }
+}</code></pre>
+        </div>
+    </div>
+
+    <!-- Why -->
+    <div class="bg-gray-800 py-16">
+        <div class="max-w-4xl mx-auto px-4">
+            <h2 class="text-3xl font-bold mb-8 text-center">Why AI Agents Need This</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-gray-900 p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-2 text-red-400">❌ Problem</h3>
+                    <p>"I changed something but don't know what"</p>
+                    <h3 class="text-xl font-semibold mb-2 mt-4 text-green-400">✅ Solution</h3>
+                    <code class="text-blue-300">statecli_replay(entity)</code>
+                </div>
+                <div class="bg-gray-900 p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-2 text-red-400">❌ Problem</h3>
+                    <p>"I broke something and need to undo"</p>
+                    <h3 class="text-xl font-semibold mb-2 mt-4 text-green-400">✅ Solution</h3>
+                    <code class="text-blue-300">statecli_undo(entity)</code>
+                </div>
+                <div class="bg-gray-900 p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-2 text-red-400">❌ Problem</h3>
+                    <p>"I want to try something risky"</p>
+                    <h3 class="text-xl font-semibold mb-2 mt-4 text-green-400">✅ Solution</h3>
+                    <code class="text-blue-300">statecli_checkpoint(entity)</code>
+                </div>
+                <div class="bg-gray-900 p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-2 text-red-400">❌ Problem</h3>
+                    <p>"Will this change break other files?"</p>
+                    <h3 class="text-xl font-semibold mb-2 mt-4 text-green-400">✅ Solution</h3>
+                    <code class="text-blue-300">statecli_predict_impact(file)</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tools -->
+    <div class="max-w-4xl mx-auto px-4 py-16">
+        <h2 class="text-3xl font-bold mb-8 text-center">27 Tools for AI Agents</h2>
+        
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h3 class="font-semibold text-purple-400 mb-2">Core</h3>
+                <ul class="text-sm text-gray-300 space-y-1">
+                    <li>• statecli_track</li>
+                    <li>• statecli_replay</li>
+                    <li>• statecli_undo</li>
+                    <li>• statecli_checkpoint</li>
+                    <li>• statecli_log</li>
+                </ul>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h3 class="font-semibold text-blue-400 mb-2">File Tracking</h3>
+                <ul class="text-sm text-gray-300 space-y-1">
+                    <li>• statecli_track_file</li>
+                    <li>• statecli_file_history</li>
+                </ul>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h3 class="font-semibold text-red-400 mb-2">Error Recovery</h3>
+                <ul class="text-sm text-gray-300 space-y-1">
+                    <li>• statecli_analyze_error</li>
+                    <li>• statecli_auto_recover</li>
+                    <li>• statecli_safe_execute</li>
+                </ul>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h3 class="font-semibold text-green-400 mb-2">Test Awareness</h3>
+                <ul class="text-sm text-gray-300 space-y-1">
+                    <li>• statecli_run_tests</li>
+                    <li>• statecli_test_impact</li>
+                    <li>• statecli_suggest_tests</li>
+                </ul>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h3 class="font-semibold text-yellow-400 mb-2">Dependencies</h3>
+                <ul class="text-sm text-gray-300 space-y-1">
+                    <li>• statecli_analyze_dependencies</li>
+                    <li>• statecli_dependency_tree</li>
+                    <li>• statecli_find_circular</li>
+                </ul>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h3 class="font-semibold text-pink-400 mb-2">Impact Analysis</h3>
+                <ul class="text-sm text-gray-300 space-y-1">
+                    <li>• statecli_predict_impact</li>
+                    <li>• statecli_is_safe</li>
+                    <li>• statecli_preview_undo</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Integrations -->
+    <div class="bg-gray-800 py-16">
+        <div class="max-w-4xl mx-auto px-4">
+            <h2 class="text-3xl font-bold mb-8 text-center">Works With</h2>
+            <div class="flex justify-center gap-8 flex-wrap text-xl">
+                <span class="bg-gray-900 px-4 py-2 rounded">🌊 Windsurf</span>
+                <span class="bg-gray-900 px-4 py-2 rounded">⚡ Cursor</span>
+                <span class="bg-gray-900 px-4 py-2 rounded">🤖 Claude</span>
+                <span class="bg-gray-900 px-4 py-2 rounded">🔗 LangChain</span>
+                <span class="bg-gray-900 px-4 py-2 rounded">👥 CrewAI</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Python -->
+    <div class="max-w-4xl mx-auto px-4 py-16">
+        <h2 class="text-3xl font-bold mb-8 text-center">Python Integration</h2>
+        <div class="code-block p-4">
+<pre class="text-gray-300"><code>pip install statecli
+
+from statecli import StateCLI, get_statecli_tools
+
+# Direct usage
+cli = StateCLI()
+cli.checkpoint("project:myapp", "before-refactor")
+cli.track("file", "src/index.py", {"action": "modified"})
+result = cli.replay("file:src/index.py")
+
+# LangChain integration
+from statecli import get_statecli_tools
+tools = get_statecli_tools()
+agent = initialize_agent(tools, llm)</code></pre>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-gray-900 border-t border-gray-800 py-8">
+        <div class="max-w-4xl mx-auto px-4 text-center text-gray-400">
+            <p>MIT License • <a href="https://github.com/statecli/mcp-server" class="text-purple-400 hover:underline">GitHub</a></p>
+        </div>
+    </div>
+</body>
+</html>

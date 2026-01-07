@@ -1,0 +1,12 @@
+src/
+.github/
+examples/
+coverage/
+.statecli/
+*.test.ts
+*.test.js
+jest.config.js
+tsconfig.json
+.gitignore
+*.db
+*.db-journal

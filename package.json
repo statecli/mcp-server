@@ -1,6 +1,6 @@
 {
   "name": "statecli-mcp-server",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "mcpName": "io.github.charo360/statecli",
   "description": "MCP Server for State Replay & Self-Debugging - Memory, replay, and undo capability for AI agents",
   "main": "./dist/index.js",

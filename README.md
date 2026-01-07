@@ -1,415 +1,153 @@
-# StateCLI - MCP Server for State Replay & Self-Debugging
+# MCP Registry
 
-> **For AI Agents:** Memory, replay, and undo capability for your actions.
+The MCP registry provides MCP clients with a list of MCP servers, like an app store for MCP servers.
 
-[![npm version](https://img.shields.io/npm/v/statecli-mcp-server.svg)](https://www.npmjs.com/package/statecli-mcp-server)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[**📤 Publish my MCP server**](docs/modelcontextprotocol-io/quickstart.mdx) | [**⚡️ Live API docs**](https://registry.modelcontextprotocol.io/docs) | [**👀 Ecosystem vision**](docs/design/ecosystem-vision.md) | 📖 **[Full documentation](./docs)**
 
-**MCP Server** | **State Management** | **Agent Self-Debugging** | **Rollback Capability**
+## Development Status
 
----
+**2025-10-24 update**: The Registry API has entered an **API freeze (v0.1)** 🎉. For the next month or more, the API will remain stable with no breaking changes, allowing integrators to confidently implement support. This freeze applies to v0.1 while development continues on v0. We'll use this period to validate the API in real-world integrations and gather feedback to shape v1 for general availability. Thank you to everyone for your contributions and patience—your involvement has been key to getting us here!
 
-## Installation
+**2025-09-08 update**: The registry has launched in preview 🎉 ([announcement blog post](https://blog.modelcontextprotocol.io/posts/2025-09-08-mcp-registry-preview/)). While the system is now more stable, this is still a preview release and breaking changes or data resets may occur. A general availability (GA) release will follow later. We'd love your feedback in [GitHub discussions](https://github.com/modelcontextprotocol/registry/discussions/new?category=ideas) or in the [#registry-dev Discord](https://discord.com/channels/1358869848138059966/1369487942862504016) ([joining details here](https://modelcontextprotocol.io/community/communication)).
 
-```bash
-npx statecli-mcp-server
-```
+Current key maintainers:
+- **Adam Jones** (Anthropic) [@domdomegg](https://github.com/domdomegg)  
+- **Tadas Antanavicius** (PulseMCP) [@tadasant](https://github.com/tadasant)
+- **Toby Padilla** (GitHub) [@toby](https://github.com/toby)
+- **Radoslav (Rado) Dimitrov** (Stacklok) [@rdimitrov](https://github.com/rdimitrov)
 
-## MCP Client Configuration
+## Contributing
 
-```json
-{
-  "mcpServers": {
-    "statecli": {
-      "command": "npx",
-      "args": ["-y", "statecli-mcp-server"]
-    }
-  }
-}
-```
+We use multiple channels for collaboration - see [modelcontextprotocol.io/community/communication](https://modelcontextprotocol.io/community/communication).
 
----
+Often (but not always) ideas flow through this pipeline:
 
-## Available Tools
+- **[Discord](https://modelcontextprotocol.io/community/communication)** - Real-time community discussions
+- **[Discussions](https://github.com/modelcontextprotocol/registry/discussions)** - Propose and discuss product/technical requirements
+- **[Issues](https://github.com/modelcontextprotocol/registry/issues)** - Track well-scoped technical work  
+- **[Pull Requests](https://github.com/modelcontextprotocol/registry/pulls)** - Contribute work towards issues
 
-| Tool | Description | Use When |
-|------|-------------|----------|
-| `statecli_replay` | See what you just did | Debugging, understanding past behavior |
-| `statecli_undo` | Rollback mistakes | Made an error, need to retry |
-| `statecli_checkpoint` | Save state before risky ops | About to do something risky |
-| `statecli_log` | View action history | Need audit trail |
-| `statecli_track` | Track state changes | Making important modifications |
+### Quick start:
 
----
+#### Pre-requisites
 
-## Quick Example
+- **Docker**
+- **Go 1.24.x**
+- **ko** - Container image builder for Go ([installation instructions](https://ko.build/install/))
+- **golangci-lint v2.4.0**
 
-```javascript
-// Checkpoint before risky operation
-await statecli_checkpoint({ entity: "order:123", name: "before-refund" });
-
-try {
-  await processOrder(order);
-} catch (error) {
-  // Replay to see what went wrong
-  const replay = await statecli_replay({ entity: "order:123" });
-  
-  // Undo if needed
-  await statecli_undo({ entity: "order:123" });
-}
-```
-
----
-
-## Why AI Agents Need This
-
-| Problem | Solution |
-|---------|----------|
-| "I changed something but don't know what" | `statecli_replay(entity)` |
-| "I broke something and need to undo" | `statecli_undo(entity)` |
-| "I want to try something risky" | `statecli_checkpoint(entity)` |
-| "I need to understand my past behavior" | `statecli_log(entity)` |
-
----
-
-## Tool Reference
-
-### `statecli_replay`
-
-Replay state changes for an entity. Shows step-by-step what happened.
-
-```json
-{
-  "entity": "order:7421",
-  "actor": "ai-agent"
-}
-```
-
-### `statecli_undo`
-
-Undo state changes. Rollback when something went wrong.
-
-```json
-{
-  "entity": "order:7421",
-  "steps": 3
-}
-```
-
-### `statecli_checkpoint`
-
-Create named checkpoint before making changes.
-
-```json
-{
-  "entity": "order:7421",
-  "name": "before-refund"
-}
-```
-
-### `statecli_log`
-
-View state change history for an entity.
-
-```json
-{
-  "entity": "order:7421",
-  "since": "1h ago",
-  "actor": "ai-agent"
-}
-```
-
-### `statecli_track`
-
-Explicitly track a state change.
-
-```json
-{
-  "entity_type": "order",
-  "entity_id": "7421",
-  "state": { "status": "paid", "amount": 49.99 }
-}
-```
-
----
-
-## Agent Self-Debugging Pattern
-
-```javascript
-try {
-  await agent.run(task);
-} catch (error) {
-  // Get replay of what just happened
-  const replay = await mcp.call("statecli_replay", {
-    entity: `task:${task.id}`,
-    actor: "ai-agent"
-  });
-  
-  // Analyze what went wrong
-  const analysis = await llm.analyze({
-    replay: replay.result,
-    error: error.message,
-    prompt: "What went wrong in this sequence?"
-  });
-  
-  // Undo if fixable
-  if (analysis.canRetry) {
-    await mcp.call("statecli_undo", {
-      entity: `task:${task.id}`,
-      steps: 1
-    });
-    
-    // Retry with fix
-    await agent.runWithFix(task, analysis.fix);
-  }
-}
-```
-
----
-
-## MCP Configuration Examples
-
-### Claude Desktop
-
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "statecli": {
-      "command": "npx",
-      "args": ["-y", "statecli-mcp-server"]
-    }
-  }
-}
-```
-
-### Cursor
-
-Add to `.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "statecli": {
-      "command": "npx",
-      "args": ["-y", "statecli-mcp-server"]
-    }
-  }
-}
-```
-
-### Windsurf
-
-Add to MCP settings:
-
-```json
-{
-  "mcpServers": {
-    "statecli": {
-      "command": "npx",
-      "args": ["-y", "statecli-mcp-server"]
-    }
-  }
-}
-```
-
----
-
-## CLI Usage
+#### Running the server
 
 ```bash
-# Initialize configuration
-statecli init
-
-# Track a state change
-statecli track order 7421 -d '{"status": "pending"}'
-
-# Replay changes
-statecli replay order:7421
-
-# View log
-statecli log order:7421 --since "1h ago"
-
-# Create checkpoint
-statecli checkpoint order:7421 before-payment
-
-# Undo last change
-statecli undo order:7421
-
-# Get current state
-statecli state order:7421
-
-# List all entities
-statecli list
-
-# Start MCP server
-statecli serve
+# Start full development environment
+make dev-compose
 ```
 
----
+This starts the registry at [`localhost:8080`](http://localhost:8080) with PostgreSQL. The database uses ephemeral storage and is reset each time you restart the containers, ensuring a clean state for development and testing.
 
-## Programmatic Usage
+**Note:** The registry uses [ko](https://ko.build) to build container images. The `make dev-compose` command automatically builds the registry image with ko and loads it into your local Docker daemon before starting the services.
 
-```typescript
-import { StateCLI } from 'statecli-mcp-server';
+By default, the registry seeds from the production API with a filtered subset of servers (to keep startup fast). This ensures your local environment mirrors production behavior and all seed data passes validation. For offline development you can seed from a file without validation with `MCP_REGISTRY_SEED_FROM=data/seed.json MCP_REGISTRY_ENABLE_REGISTRY_VALIDATION=false make dev-compose`.
 
-const cli = new StateCLI();
+The setup can be configured with environment variables in [docker-compose.yml](./docker-compose.yml) - see [.env.example](./.env.example) for a reference.
 
-// Track state
-cli.track('order', '7421', { status: 'pending' }, 'ai-agent');
+<details>
+<summary>Alternative: Running a pre-built Docker image</summary>
 
-// Replay
-const replay = cli.replay('order:7421');
-
-// Checkpoint
-cli.checkpoint('order:7421', 'before-payment');
-
-// Undo
-cli.undo('order:7421', 1);
-
-// Log with wildcards
-const log = cli.log('order:*', { since: '1h ago' });
-```
-
----
-
-## Integration Examples
-
-### LangChain
-
-```javascript
-import { AgentExecutor } from "langchain/agents";
-
-const executor = AgentExecutor.fromAgentAndTools({
-  agent,
-  tools: [...tools, statecliMCPTools],
-  callbacks: [{
-    handleToolEnd: async (tool, output) => {
-      await statecli_track({
-        entity_type: "agent-task",
-        entity_id: taskId,
-        state: { tool, output }
-      });
-    }
-  }]
-});
-```
-
-### AutoGPT
-
-```python
-from statecli import StateCLI
-
-class SelfDebuggingAgent:
-    def __init__(self):
-        self.statecli = StateCLI()
-    
-    async def execute(self, task):
-        checkpoint = await self.statecli.checkpoint(f"task:{task.id}")
-        try:
-            await self.run_task(task)
-        except Exception as e:
-            replay = await self.statecli.replay(f"task:{task.id}")
-            await self.statecli.undo(f"task:{task.id}")
-            await self.retry_with_context(task, replay)
-```
-
-### CrewAI
-
-```python
-from crewai import Agent, Task
-from statecli import statecli_mcp_tool
-
-agent = Agent(
-    role="Developer",
-    tools=[statecli_mcp_tool],
-    allow_delegation=True
-)
-```
-
----
-
-## Output Format
-
-All outputs are JSON-stable:
-
-```json
-{
-  "entity": "order:7421",
-  "changes": [
-    {
-      "timestamp": "2025-01-07T10:23:45Z",
-      "step": 1,
-      "before": { "status": null },
-      "after": { "status": "pending" },
-      "actor": "ai-agent"
-    }
-  ],
-  "summary": "1 state change found",
-  "suggested_next_actions": ["investigate latest change"]
-}
-```
-
----
-
-## Performance
-
-- **Write latency:** < 1ms (async, non-blocking)
-- **Read latency:** < 5ms (local SQLite)
-- **Storage:** ~100 bytes per state change
-- **Overhead:** Negligible for production use
-
----
-
-## Configuration
-
-Create `.statecli/config.json`:
-
-```json
-{
-  "storage": {
-    "type": "local",
-    "path": ".statecli/state.db"
-  },
-  "autoTrack": {
-    "enabled": true,
-    "patterns": ["order:*", "user:*", "task:*"]
-  },
-  "retention": {
-    "days": 30,
-    "maxChangesPerEntity": 1000
-  }
-}
-```
-
----
-
-## Development
+Pre-built Docker images are automatically published to GitHub Container Registry:
 
 ```bash
-npm install
-npm run build
-npm test
+# Run latest stable release
+docker run -p 8080:8080 ghcr.io/modelcontextprotocol/registry:latest
+
+# Run latest from main branch (continuous deployment)
+docker run -p 8080:8080 ghcr.io/modelcontextprotocol/registry:main
+
+# Run specific release version
+docker run -p 8080:8080 ghcr.io/modelcontextprotocol/registry:v1.0.0
+
+# Run development build from main branch
+docker run -p 8080:8080 ghcr.io/modelcontextprotocol/registry:main-20250906-abc123d
 ```
 
----
+**Available tags:** 
+- **Releases**: `latest`, `v1.0.0`, `v1.1.0`, etc.
+- **Continuous**: `main` (latest main branch build)
+- **Development**: `main-<date>-<sha>` (specific commit builds)
 
-## Links
+</details>
 
-- **GitHub:** https://github.com/statecli/mcp-server
-- **NPM:** https://www.npmjs.com/package/statecli-mcp-server
-- **Examples:** https://github.com/statecli/examples
-- **Issues:** https://github.com/statecli/mcp-server/issues
+#### Publishing a server
 
----
+To publish a server, we've built a simple CLI. You can use it with:
 
-## License
+```bash
+# Build the latest CLI
+make publisher
 
-MIT - Free for all use including commercial AI agents
+# Use it!
+./bin/mcp-publisher --help
+```
 
----
+See [the publisher guide](./docs/modelcontextprotocol-io/quickstart.mdx) for more details.
 
-## Keywords
+#### Other commands
 
-state-management, mcp-server, ai-agent-tools, debugging, replay, undo, rollback, agent-memory, self-debugging, autonomous-agents, model-context-protocol, time-travel-debugging, checkpoint, agent-introspection, state-tracking, langchain-tools, autogpt-plugins, crewai-tools
+```bash
+# Run lint, unit tests and integration tests
+make check
+```
+
+There are also a few more helpful commands for development. Run `make help` to learn more, or look in [Makefile](./Makefile).
+
+<!--
+For Claude and other AI tools: Always prefer make targets over custom commands where possible.
+-->
+
+## Architecture
+
+### Project Structure
+
+```
+├── cmd/                     # Application entry points
+│   └── publisher/           # Server publishing tool
+├── data/                    # Seed data
+├── deploy/                  # Deployment configuration (Pulumi)
+├── docs/                    # Documentation
+├── internal/                # Private application code
+│   ├── api/                 # HTTP handlers and routing
+│   ├── auth/                # Authentication (GitHub OAuth, JWT, namespace blocking)
+│   ├── config/              # Configuration management
+│   ├── database/            # Data persistence (PostgreSQL)
+│   ├── service/             # Business logic
+│   ├── telemetry/           # Metrics and monitoring
+│   └── validators/          # Input validation
+├── pkg/                     # Public packages
+│   ├── api/                 # API types and structures
+│   │   └── v0/              # Version 0 API types
+│   └── model/               # Data models for server.json
+├── scripts/                 # Development and testing scripts
+├── tests/                   # Integration tests
+└── tools/                   # CLI tools and utilities
+    └── validate-*.sh        # Schema validation tools
+```
+
+### Authentication
+
+Publishing supports multiple authentication methods:
+- **GitHub OAuth** - For publishing by logging into GitHub
+- **GitHub OIDC** - For publishing from GitHub Actions
+- **DNS verification** - For proving ownership of a domain and its subdomains
+- **HTTP verification** - For proving ownership of a domain
+
+The registry validates namespace ownership when publishing. E.g. to publish...:
+- `io.github.domdomegg/my-cool-mcp` you must login to GitHub as `domdomegg`, or be in a GitHub Action on domdomegg's repos
+- `me.adamjones/my-cool-mcp` you must prove ownership of `adamjones.me` via DNS or HTTP challenge
+
+## Community Projects
+
+Check out [community projects](docs/community-projects.md) to explore notable registry-related work created by the community.
+
+## More documentation
+
+See the [documentation](./docs) for more details if your question has not been answered here!

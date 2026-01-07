@@ -18,16 +18,20 @@ export interface Checkpoint {
   state: Record<string, unknown>;
 }
 
+export interface ReplayChange {
+  id?: string;
+  entity?: string;
+  timestamp: string;
+  step: number;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown>;
+  actor: string;
+  checkpointName?: string;
+}
+
 export interface ReplayResult {
   entity: string;
-  changes: Array<{
-    timestamp: string;
-    step: number;
-    before: Record<string, unknown> | null;
-    after: Record<string, unknown>;
-    actor: string;
-    checkpointName?: string;
-  }>;
+  changes: ReplayChange[];
   summary: string;
   suggestedNextActions: string[];
 }

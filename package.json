@@ -6,7 +6,8 @@
   "main": "./dist/index.js",
   "bin": {
     "statecli": "./dist/cli.js",
-    "statecli-mcp-server": "./dist/index.js"
+    "statecli-mcp-server": "./dist/index.js",
+    "statecli-enhanced": "./dist/index-enhanced.js"
   },
   "types": "./dist/index.d.ts",
   "scripts": {

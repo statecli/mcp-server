@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "statecli"
+version = "0.1.2"
+description = "State Replay & Self-Debugging for AI Agents - Track, replay, undo, and checkpoint state changes"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.8"
+authors = [
+    { name = "StateCLI", email = "support@statecli.dev" }
+]
+keywords = [
+    "state-management",
+    "state-replay", 
+    "time-travel-debugging",
+    "undo",
+    "rollback",
+    "checkpoint",
+    "agent-memory",
+    "self-debugging",
+    "ai-agent-tools",
+    "mcp-server",
+    "model-context-protocol",
+    "autonomous-agents",
+    "langchain",
+    "autogpt",
+    "crewai"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Debuggers"
+]
+
+[project.urls]
+Homepage = "https://github.com/statecli/mcp-server"
+Documentation = "https://github.com/statecli/mcp-server#readme"
+Repository = "https://github.com/statecli/mcp-server"
+Issues = "https://github.com/statecli/mcp-server/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["statecli"]

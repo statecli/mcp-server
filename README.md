@@ -130,6 +130,24 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 }
 ```
 
+### For Windsurf
+
+1. Press `Ctrl + Shift + P` → type `Open MCP Config`
+2. Add StateCLI to the config:
+
+```json
+{
+  "mcpServers": {
+    "statecli": {
+      "command": "npx",
+      "args": ["-y", "statecli-mcp-server"]
+    }
+  }
+}
+```
+
+3. Reload window (`Ctrl + Shift + P` → `Reload Window`)
+
 ### For Cursor / Continue / Other MCP Clients
 
 Add to your MCP configuration:

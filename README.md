@@ -61,6 +61,7 @@ Now StateCLI automatically:
 - ✅ Creates checkpoints every 15 min
 - ✅ Lets you undo any mistake
 - ✅ Shows what changed recently
+- ✅ **Windows Native Support** (v0.4.1+)
 
 **See what changed:**
 ```bash

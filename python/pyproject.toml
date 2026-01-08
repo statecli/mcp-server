@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "statecli"
-version = "0.4.0"
+version = "0.4.1"
 description = "State Replay & Self-Debugging for AI Agents - Track, replay, undo, and checkpoint state changes"
 readme = "README.md"
 license = "MIT"

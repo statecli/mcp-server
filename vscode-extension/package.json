@@ -2,7 +2,7 @@
   "name": "statecli",
   "displayName": "StateCLI - AI Agent Memory & Undo",
   "description": "Memory, replay, and undo capability for AI coding agents. One-click MCP server setup.",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "publisher": "statecli",
   "icon": "icon.png",
   "repository": {

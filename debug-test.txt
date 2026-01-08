@@ -1,0 +1,9 @@
+Testing file watcher debug
+Initial content
+Modified content - should trigger watcher
+Test change
+Another test change
+Polling test change
+Debug test change
+Test Node Watch
+Test Node Watch 2

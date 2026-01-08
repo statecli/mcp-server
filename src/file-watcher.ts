@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as chokidar from 'chokidar';
+import watch from 'node-watch';
 import { StateCLI } from './statecli';
 
 export interface WatcherConfig {
@@ -11,10 +11,11 @@ export interface WatcherConfig {
 }
 
 export class FileWatcher {
-    private watcher: chokidar.FSWatcher | null = null;
+    private watcher: any = null;
     private stateCLI: StateCLI;
     private config: WatcherConfig;
     private lastCheckpoint: number = Date.now();
+    private fileSnapshots: Map<string, string> = new Map();
 
     constructor(stateCLI: StateCLI, config: WatcherConfig) {
         this.stateCLI = stateCLI;
@@ -23,32 +24,62 @@ export class FileWatcher {
 
     start(): void {
         const watchPaths = this.config.paths;
-        const ignore = this.config.ignore || [
-            '**/node_modules/**',
-            '**/.git/**',
-            '**/dist/**',
-            '**/build/**',
-            '**/.next/**',
-            '**/coverage/**'
+        // Basic ignore list - substrings to ignore
+        const ignoredSubstrings = [
+            'node_modules',
+            '.git',
+            'dist',
+            'build',
+            '.next',
+            'coverage',
+            '.statecli'
         ];
+
+        // Filter function for node-watch
+        // Return true to include/watch, false to ignore
+        const filter = (name: string) => {
+            for (const ignored of ignoredSubstrings) {
+                // Check if path contains the ignored substring
+                // Using platform specific separator check might be safer but substring is usually ok for these standard names
+                if (name.includes(ignored)) return false;
+            }
+            // Also ignore changes to specific files like .DS_Store
+            if (name.endsWith('.DS_Store')) return false;
+
+            return true;
+        };
 
         console.log(`🔍 StateCLI watching: ${watchPaths.join(', ')}`);
 
-        this.watcher = chokidar.watch(watchPaths, {
-            ignored: ignore,
-            persistent: true,
-            ignoreInitial: true,
-            awaitWriteFinish: {
-                stabilityThreshold: 500,
-                pollInterval: 100
-            }
-        });
+        try {
+            this.watcher = watch(watchPaths, {
+                recursive: true,
+                filter: filter,
+                delay: 200 // Wait 200ms for file write to finish/debounce
+            });
 
-        this.watcher
-            .on('change', (filePath) => this.handleFileChange(filePath))
-            .on('add', (filePath) => this.handleFileAdd(filePath))
-            .on('unlink', (filePath) => this.handleFileDelete(filePath))
-            .on('error', (error) => console.error(`Watcher error: ${error}`));
+            this.watcher.on('change', (evt: string, name: string) => {
+                // name is the full path
+                if (evt === 'update') {
+                    // Check if it's a new file or existing
+                    if (this.fileSnapshots.has(name)) {
+                        console.log(`📝 File changed: ${name}`);
+                        this.handleFileChange(name);
+                    } else {
+                        console.log(`➕ File added: ${name}`);
+                        this.handleFileAdd(name);
+                    }
+                } else if (evt === 'remove') {
+                    console.log(`🗑️ File deleted: ${name}`);
+                    this.handleFileDelete(name);
+                }
+            });
+
+            console.log('✅ Watcher ready (using node-watch)');
+
+        } catch (error) {
+            console.error('Failed to start watcher:', error);
+        }
 
         // Auto-checkpoint timer
         if (this.config.autoCheckpoint) {
@@ -68,12 +99,20 @@ export class FileWatcher {
         console.log(`📝 Changed: ${relativePath}`);
 
         try {
+            // Read new content
             const content = fs.readFileSync(filePath, 'utf-8');
             const entity = `file:${relativePath}`;
 
-            // Track the file change
-            this.stateCLI.trackFile(entity, content, content);
+            // Get previous content from snapshots or use empty string
+            const previousContent = this.fileSnapshots.get(filePath) || '';
+
+            // Track the file change with proper before/after
+            this.stateCLI.trackFile(entity, previousContent, content);
+
+            // Update snapshot
+            this.fileSnapshots.set(filePath, content);
         } catch (error) {
+            // If file was deleted rapidly or read failed
             console.error(`Error tracking ${filePath}:`, error);
         }
     }
@@ -85,6 +124,9 @@ export class FileWatcher {
         try {
             const content = fs.readFileSync(filePath, 'utf-8');
 
+            // Initialize snapshot
+            this.fileSnapshots.set(filePath, content);
+
             this.stateCLI.track('file', relativePath, {
                 action: 'created',
                 timestamp: new Date().toISOString(),
@@ -92,13 +134,16 @@ export class FileWatcher {
                 size: content.length
             }, 'watcher');
         } catch (error) {
-            console.error(`Error tracking ${filePath}:`, error);
+            // File might be deleted immediately
+            // console.error(`Error tracking ${filePath}:`, error);
         }
     }
 
     private async handleFileDelete(filePath: string): Promise<void> {
         const relativePath = path.relative(process.cwd(), filePath);
         console.log(`🗑️ Deleted: ${relativePath}`);
+
+        this.fileSnapshots.delete(filePath);
 
         this.stateCLI.track('file', relativePath, {
             action: 'deleted',
@@ -113,10 +158,10 @@ export class FileWatcher {
 
         if (elapsed >= (this.config.checkpointInterval || 15)) {
             console.log(`💾 Auto-checkpoint (${elapsed.toFixed(0)} min elapsed)`);
-            
+
             const checkpointName = `auto-${new Date().toISOString().replace(/[:.]/g, '-')}`;
             this.stateCLI.checkpoint('project:current', checkpointName);
-            
+
             this.lastCheckpoint = now;
         }
     }

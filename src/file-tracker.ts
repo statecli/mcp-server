@@ -10,6 +10,7 @@ import * as crypto from 'crypto';
 import { StateCLI } from './statecli';
 
 export interface FileChange {
+  id?: string;
   filePath: string;
   operation: 'create' | 'modify' | 'delete';
   before: string | null;
@@ -76,7 +77,17 @@ export class FileTracker {
     const diff = this.computeDiff(beforeContent, afterContent);
     const timestamp = new Date().toISOString();
 
+    // Track in StateCLI
+    const trackResult = this.statecli.track('file', filePath, {
+      operation,
+      contentHash: afterContent ? this.hashContent(afterContent) : null,
+      lineCount: afterContent ? afterContent.split('\n').length : 0,
+      diff: diff.slice(0, 50), // Store first 50 diff lines
+      timestamp
+    }, actor);
+
     const change: FileChange = {
+      id: trackResult.id,
       filePath: path.normalize(filePath),
       operation,
       before: beforeContent,
@@ -85,20 +96,11 @@ export class FileTracker {
       timestamp
     };
 
-    // Track in StateCLI
-    this.statecli.track('file', filePath, {
-      operation,
-      contentHash: afterContent ? this.hashContent(afterContent) : null,
-      lineCount: afterContent ? afterContent.split('\n').length : 0,
-      diff: diff.slice(0, 50), // Store first 50 diff lines
-      timestamp
-    }, actor);
-
     this.changeCount++;
 
     // Auto-checkpoint if threshold reached
-    if (this.config.autoCheckpoint && 
-        this.changeCount >= this.config.checkpointThreshold) {
+    if (this.config.autoCheckpoint &&
+      this.changeCount >= this.config.checkpointThreshold) {
       this.createAutoCheckpoint();
     }
 
@@ -151,7 +153,7 @@ export class FileTracker {
    */
   private computeDiff(before: string | null, after: string | null): string[] {
     const diff: string[] = [];
-    
+
     if (before === null && after !== null) {
       // New file
       const lines = after.split('\n');
@@ -168,13 +170,13 @@ export class FileTracker {
       // Modified file - simple line-by-line diff
       const beforeLines = before.split('\n');
       const afterLines = after.split('\n');
-      
+
       const maxLines = Math.max(beforeLines.length, afterLines.length);
-      
+
       for (let i = 0; i < maxLines; i++) {
         const beforeLine = beforeLines[i];
         const afterLine = afterLines[i];
-        
+
         if (beforeLine !== afterLine) {
           if (beforeLine !== undefined) {
             diff.push(`-${i + 1}: ${beforeLine}`);
@@ -185,7 +187,7 @@ export class FileTracker {
         }
       }
     }
-    
+
     return diff;
   }
 
@@ -241,7 +243,7 @@ export class FileTracker {
 
         if (previousHash !== newHash) {
           this.fileHashes.set(normalizedPath, newHash);
-          
+
           if (previousHash === undefined) {
             // New file or first time seeing it
             this.trackCreate(normalizedPath, content);

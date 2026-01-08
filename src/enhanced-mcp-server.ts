@@ -20,7 +20,10 @@ import { TestAwareness } from './test-awareness';
 import { DependencyTracker } from './dependency-tracker';
 import { RollbackPreview } from './rollback-preview';
 import { CrossFileImpact } from './cross-file-impact';
+import { SemanticMemory } from './semantic-memory';
 import { StateCLIConfig } from './types';
+
+// ... (snipped tool definitions) ...
 
 const ENHANCED_TOOLS: Tool[] = [
   // Original tools
@@ -87,7 +90,7 @@ const ENHANCED_TOOLS: Tool[] = [
       required: ['entity_type', 'entity_id', 'state']
     }
   },
-  
+
   // NEW: File tracking tools
   {
     name: 'statecli_track_file',
@@ -124,8 +127,8 @@ const ENHANCED_TOOLS: Tool[] = [
       properties: {
         error_message: { type: 'string', description: 'The error message' },
         error_type: { type: 'string', description: 'Type of error (optional)' },
-        affected_entities: { 
-          type: 'array', 
+        affected_entities: {
+          type: 'array',
           items: { type: 'string' },
           description: 'Entities that might be affected'
         }
@@ -140,8 +143,8 @@ const ENHANCED_TOOLS: Tool[] = [
       type: 'object',
       properties: {
         error_message: { type: 'string', description: 'The error message' },
-        affected_entities: { 
-          type: 'array', 
+        affected_entities: {
+          type: 'array',
           items: { type: 'string' },
           description: 'Entities that might be affected'
         }
@@ -379,6 +382,7 @@ export class EnhancedStateCLIMCPServer {
   private dependencyTracker: DependencyTracker;
   private rollbackPreview: RollbackPreview;
   private crossFileImpact: CrossFileImpact;
+  private semanticMemory: SemanticMemory;
 
   constructor(config?: Partial<StateCLIConfig>) {
     this.statecli = new StateCLI(config);
@@ -390,9 +394,10 @@ export class EnhancedStateCLIMCPServer {
     this.dependencyTracker = new DependencyTracker(this.statecli);
     this.rollbackPreview = new RollbackPreview(this.statecli);
     this.crossFileImpact = new CrossFileImpact(this.statecli);
-    
+    this.semanticMemory = new SemanticMemory(this.statecli);
+
     this.server = new Server(
-      { name: 'statecli-enhanced', version: '3.0.0' },
+      { name: 'statecli-enhanced', version: '3.1.0' },
       { capabilities: { tools: {} } }
     );
 
@@ -514,12 +519,39 @@ export class EnhancedStateCLIMCPServer {
 
   private handleTrack(args: { entity_type: string; entity_id: string; state: any; actor?: string }) {
     const result = this.statecli.track(args.entity_type, args.entity_id, args.state, args.actor || 'ai-agent');
+
+    const change = {
+      id: result.id,
+      entity: result.entity,
+      entityType: args.entity_type,
+      entityId: args.entity_id,
+      timestamp: result.timestamp,
+      before: null,
+      after: args.state,
+      actor: args.actor || 'ai-agent',
+      checkpointName: undefined
+    };
+
+    this.semanticMemory.indexChange(change).catch(err => console.error('Semantic index error:', err));
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
   }
 
   // File tracking handlers
   private handleTrackFile(args: { file_path: string; before_content: string; after_content: string; actor?: string }) {
     const result = this.fileTracker.trackEdit(args.file_path, args.before_content, args.after_content, args.actor);
+    const change = {
+      id: result.id || 'unknown',
+      entity: `file:${args.file_path}`,
+      entityType: 'file',
+      entityId: args.file_path,
+      actor: args.actor || 'ai-agent',
+      timestamp: result.timestamp,
+      before: { content: args.before_content },
+      after: { content: args.after_content },
+      step: 0,
+      checkpointName: undefined
+    };
+    this.semanticMemory.indexChange(change).catch(err => console.error('Semantic index error:', err));
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
   }
 
@@ -545,17 +577,17 @@ export class EnhancedStateCLIMCPServer {
   private handleSafeExecute(args: { entity: string; operation_name: string }) {
     // Create checkpoint - the actual execution would be done by the caller
     const checkpoint = this.statecli.checkpoint(args.entity, `before-${args.operation_name}`);
-    return { 
-      content: [{ 
-        type: 'text', 
+    return {
+      content: [{
+        type: 'text',
         text: JSON.stringify({
           checkpoint_created: true,
           checkpoint_id: checkpoint.id,
           entity: args.entity,
           operation: args.operation_name,
           message: `Checkpoint created. Proceed with ${args.operation_name}. Call statecli_undo if it fails.`
-        }, null, 2) 
-      }] 
+        }, null, 2)
+      }]
     };
   }
 
@@ -563,7 +595,9 @@ export class EnhancedStateCLIMCPServer {
   private handleMemoryQuery(args: { question?: string; entity_pattern?: string; hours_ago?: number }) {
     let result;
     if (args.question) {
-      result = this.sessionMemory.ask(args.question);
+      // Use new Semantic Search
+      return this.semanticMemory.search(args.question)
+        .then(results => ({ content: [{ type: 'text', text: JSON.stringify(results, null, 2) }] }));
     } else if (args.hours_ago) {
       result = this.sessionMemory.getRecentActivity(args.hours_ago);
     } else if (args.entity_pattern) {
@@ -586,11 +620,11 @@ export class EnhancedStateCLIMCPServer {
     } else {
       const sessions = this.sessionMemory.getSessions();
       const currentId = this.sessionMemory.getSessionId();
-      return { 
-        content: [{ 
-          type: 'text', 
-          text: JSON.stringify({ currentSession: currentId, recentSessions: sessions.slice(0, 10) }, null, 2) 
-        }] 
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({ currentSession: currentId, recentSessions: sessions.slice(0, 10) }, null, 2)
+        }]
       };
     }
   }
@@ -600,14 +634,14 @@ export class EnhancedStateCLIMCPServer {
     if (!this.gitIntegration.isGitRepo()) {
       return { content: [{ type: 'text', text: JSON.stringify({ error: 'Not a git repository' }) }] };
     }
-    
+
     const status = {
       branch: this.gitIntegration.getCurrentBranch(),
       commit: this.gitIntegration.getCurrentCommit(),
       uncommittedChanges: this.gitIntegration.getUncommittedChanges(),
       recentCommits: this.gitIntegration.getRecentCommits(5)
     };
-    
+
     this.gitIntegration.trackGitState();
     return { content: [{ type: 'text', text: JSON.stringify(status, null, 2) }] };
   }
@@ -655,14 +689,14 @@ export class EnhancedStateCLIMCPServer {
   private handleFindCircular() {
     this.dependencyTracker.buildGraph();
     const cycles = this.dependencyTracker.findCircularDependencies();
-    return { 
-      content: [{ 
-        type: 'text', 
-        text: JSON.stringify({ 
-          found: cycles.length, 
-          cycles: cycles.slice(0, 10) 
-        }, null, 2) 
-      }] 
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify({
+          found: cycles.length,
+          cycles: cycles.slice(0, 10)
+        }, null, 2)
+      }]
     };
   }
 

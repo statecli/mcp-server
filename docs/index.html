@@ -3,32 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StateCLI - Memory & Undo for AI Coding Agents</title>
-    <meta name="description" content="StateCLI gives AI coding agents memory, replay, and undo capabilities. Track state changes, rollback mistakes, analyze dependencies.">
-    <meta name="keywords" content="MCP, AI agent, coding assistant, undo, replay, state management, Claude, Cursor, Windsurf">
+    
+    <!-- Primary Meta Tags -->
+    <title>StateCLI - Memory, Replay & Undo for AI Coding Agents | MCP Server</title>
+    <meta name="title" content="StateCLI - Memory, Replay & Undo for AI Coding Agents | MCP Server">
+    <meta name="description" content="Give your AI coding agent superpowers. StateCLI provides 27 MCP tools for state tracking, undo/redo, error recovery, dependency analysis, and cross-file impact prediction. Works with Claude, Cursor, Windsurf, LangChain.">
+    <meta name="keywords" content="MCP server, AI coding agent, undo redo, state management, Claude MCP, Cursor AI, Windsurf Cascade, LangChain tools, CrewAI, AutoGPT, code rollback, checkpoint, replay, AI developer tools, model context protocol">
+    <meta name="author" content="StateCLI">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://statecli.dev/">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://statecli.dev/">
+    <meta property="og:title" content="StateCLI - Memory, Replay & Undo for AI Coding Agents">
+    <meta property="og:description" content="Give your AI coding agent superpowers. 27 MCP tools for state tracking, undo, error recovery, and dependency analysis.">
+    <meta property="og:image" content="https://statecli.dev/og-image.png">
+    <meta property="og:site_name" content="StateCLI">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://statecli.dev/">
+    <meta property="twitter:title" content="StateCLI - Memory, Replay & Undo for AI Coding Agents">
+    <meta property="twitter:description" content="Give your AI coding agent superpowers. 27 MCP tools for state tracking, undo, error recovery, and dependency analysis.">
+    <meta property="twitter:image" content="https://statecli.dev/og-image.png">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "StateCLI",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Windows, macOS, Linux",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "description": "MCP Server providing memory, replay, and undo capabilities for AI coding agents. 27 tools for state management, error recovery, and dependency analysis.",
+        "url": "https://statecli.dev",
+        "downloadUrl": "https://www.npmjs.com/package/statecli-mcp-server",
+        "softwareVersion": "0.3.0",
+        "author": {
+            "@type": "Organization",
+            "name": "StateCLI"
+        }
+    }
+    </script>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏪</text></svg>">
+    
+    <!-- Styles -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
+        * { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
         .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .code-block { background: #1e1e1e; border-radius: 8px; }
+        .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
+        .code-block { background: #0d1117; border-radius: 12px; border: 1px solid #30363d; }
         pre { margin: 0; }
+        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .hover-lift { transition: transform 0.2s, box-shadow 0.2s; }
+        .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(102, 126, 234, 0.3); }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .nav-blur { background: rgba(17, 24, 39, 0.8); backdrop-filter: blur(12px); }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
+    <!-- Navigation -->
+    <nav class="nav-blur fixed w-full z-50 border-b border-gray-800">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/" class="text-xl font-bold">⏪ StateCLI</a>
+            <div class="flex gap-6 items-center">
+                <a href="#features" class="text-gray-300 hover:text-white">Features</a>
+                <a href="#tools" class="text-gray-300 hover:text-white">Tools</a>
+                <a href="#install" class="text-gray-300 hover:text-white">Install</a>
+                <a href="https://github.com/statecli/mcp-server" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
     <!-- Hero -->
-    <div class="gradient-bg py-20">
-        <div class="max-w-4xl mx-auto px-4 text-center">
-            <h1 class="text-5xl font-bold mb-4">StateCLI</h1>
-            <p class="text-2xl mb-8 opacity-90">Memory, Replay & Undo for AI Coding Agents</p>
-            <div class="flex justify-center gap-4 flex-wrap">
-                <a href="https://www.npmjs.com/package/statecli-mcp-server" class="bg-white text-purple-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100">
-                    📦 NPM
+    <div class="gradient-bg pt-32 pb-24">
+        <div class="max-w-5xl mx-auto px-4 text-center">
+            <div class="inline-block bg-white/10 backdrop-blur px-4 py-1 rounded-full text-sm mb-6">
+                🚀 v0.3.0 - Now with 27 tools for AI agents
+            </div>
+            <h1 class="text-5xl md:text-6xl font-extrabold mb-6 leading-tight">
+                Memory, Replay & Undo<br>for AI Coding Agents
+            </h1>
+            <p class="text-xl md:text-2xl mb-10 opacity-90 max-w-3xl mx-auto">
+                Give your AI assistant superpowers. Track every change, rollback mistakes instantly, predict breaking changes before they happen.
+            </p>
+            <div class="flex justify-center gap-4 flex-wrap mb-12">
+                <a href="https://www.npmjs.com/package/statecli-mcp-server" class="bg-white text-purple-700 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 hover-lift flex items-center gap-2">
+                    <span>📦</span> Install from NPM
                 </a>
-                <a href="https://pypi.org/project/statecli/" class="bg-white text-purple-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100">
-                    🐍 PyPI
+                <a href="https://github.com/statecli/mcp-server" class="bg-gray-800/50 backdrop-blur text-white px-8 py-4 rounded-xl font-semibold hover:bg-gray-700 hover-lift flex items-center gap-2 border border-white/20">
+                    <span>⭐</span> Star on GitHub
                 </a>
-                <a href="https://github.com/statecli/mcp-server" class="bg-gray-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-700">
-                    ⭐ GitHub
-                </a>
+            </div>
+            <div class="flex justify-center gap-8 text-sm opacity-75">
+                <span>✓ Works with Claude</span>
+                <span>✓ Works with Cursor</span>
+                <span>✓ Works with Windsurf</span>
+                <span>✓ Works with LangChain</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="bg-gray-800 border-y border-gray-700 py-8">
+        <div class="max-w-5xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div>
+                <div class="text-3xl font-bold gradient-text">27</div>
+                <div class="text-gray-400">MCP Tools</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold gradient-text">2</div>
+                <div class="text-gray-400">Languages</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold gradient-text">5+</div>
+                <div class="text-gray-400">Integrations</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold gradient-text">MIT</div>
+                <div class="text-gray-400">License</div>
             </div>
         </div>
     </div>
@@ -177,11 +284,115 @@ agent = initialize_agent(tools, llm)</code></pre>
         </div>
     </div>
 
-    <!-- Footer -->
-    <div class="bg-gray-900 border-t border-gray-800 py-8">
-        <div class="max-w-4xl mx-auto px-4 text-center text-gray-400">
-            <p>MIT License • <a href="https://github.com/statecli/mcp-server" class="text-purple-400 hover:underline">GitHub</a></p>
+    <!-- Use Cases Section -->
+    <section id="use-cases" class="py-20 bg-gray-800">
+        <div class="max-w-5xl mx-auto px-4">
+            <h2 class="text-3xl font-bold mb-4 text-center">Real-World Use Cases</h2>
+            <p class="text-gray-400 text-center mb-12 max-w-2xl mx-auto">See how AI agents use StateCLI to code more reliably</p>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <article class="glass p-6 rounded-xl hover-lift">
+                    <h3 class="text-xl font-semibold mb-3 text-purple-400">🔄 Safe Refactoring</h3>
+                    <p class="text-gray-300 mb-4">Before touching core files, the agent checks dependencies and creates a checkpoint. If tests fail, it rolls back instantly.</p>
+                    <code class="text-sm text-blue-300">statecli_checkpoint() → edit → statecli_undo()</code>
+                </article>
+                
+                <article class="glass p-6 rounded-xl hover-lift">
+                    <h3 class="text-xl font-semibold mb-3 text-green-400">🐛 Error Recovery</h3>
+                    <p class="text-gray-300 mb-4">When an error occurs, the agent analyzes what changed and automatically suggests or executes a fix.</p>
+                    <code class="text-sm text-blue-300">statecli_analyze_error() → statecli_auto_recover()</code>
+                </article>
+                
+                <article class="glass p-6 rounded-xl hover-lift">
+                    <h3 class="text-xl font-semibold mb-3 text-yellow-400">📊 Impact Prediction</h3>
+                    <p class="text-gray-300 mb-4">Before renaming a function, the agent predicts which files will break and in what order to update them.</p>
+                    <code class="text-sm text-blue-300">statecli_predict_impact() → statecli_safe_change_order()</code>
+                </article>
+                
+                <article class="glass p-6 rounded-xl hover-lift">
+                    <h3 class="text-xl font-semibold mb-3 text-red-400">🧪 Test Awareness</h3>
+                    <p class="text-gray-300 mb-4">After editing a file, the agent knows exactly which tests to run and tracks pass/fail history.</p>
+                    <code class="text-sm text-blue-300">statecli_test_impact() → statecli_run_tests()</code>
+                </article>
+            </div>
         </div>
-    </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 gradient-bg">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h2 class="text-4xl font-bold mb-6">Ready to Supercharge Your AI Agent?</h2>
+            <p class="text-xl mb-10 opacity-90">Install in 30 seconds. No configuration required.</p>
+            <div class="code-block p-6 max-w-2xl mx-auto mb-8 text-left">
+<pre class="text-gray-300"><code><span class="text-gray-500">// Add to your mcp_config.json</span>
+{
+  "<span class="text-green-400">mcpServers</span>": {
+    "<span class="text-purple-400">statecli</span>": {
+      "command": "<span class="text-yellow-400">npx</span>",
+      "args": ["-y", "<span class="text-blue-400">statecli-mcp-server</span>"]
+    }
+  }
+}</code></pre>
+            </div>
+            <div class="flex justify-center gap-4 flex-wrap">
+                <a href="https://www.npmjs.com/package/statecli-mcp-server" class="bg-white text-purple-700 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 hover-lift">
+                    Get Started with NPM
+                </a>
+                <a href="https://pypi.org/project/statecli/" class="bg-gray-900/50 backdrop-blur text-white px-8 py-4 rounded-xl font-semibold hover:bg-gray-800 hover-lift border border-white/20">
+                    Install Python Package
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 border-t border-gray-800 py-12">
+        <div class="max-w-5xl mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <h4 class="font-bold mb-4">⏪ StateCLI</h4>
+                    <p class="text-gray-400 text-sm">Memory, replay, and undo for AI coding agents.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4 text-gray-300">Install</h4>
+                    <ul class="text-gray-400 text-sm space-y-2">
+                        <li><a href="https://www.npmjs.com/package/statecli-mcp-server" class="hover:text-white">NPM Package</a></li>
+                        <li><a href="https://pypi.org/project/statecli/" class="hover:text-white">PyPI Package</a></li>
+                        <li><a href="https://github.com/statecli/mcp-server" class="hover:text-white">GitHub Source</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4 text-gray-300">Resources</h4>
+                    <ul class="text-gray-400 text-sm space-y-2">
+                        <li><a href="https://github.com/statecli/mcp-server#readme" class="hover:text-white">Documentation</a></li>
+                        <li><a href="https://github.com/statecli/mcp-server/blob/main/TUTORIAL.md" class="hover:text-white">Tutorial</a></li>
+                        <li><a href="https://github.com/statecli/mcp-server/blob/main/AGENTS.md" class="hover:text-white">Agent Guide</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4 text-gray-300">Works With</h4>
+                    <ul class="text-gray-400 text-sm space-y-2">
+                        <li>Claude Desktop</li>
+                        <li>Cursor</li>
+                        <li>Windsurf / Cascade</li>
+                        <li>LangChain / CrewAI</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
+                <p>MIT License © 2024 StateCLI • Built for the AI agent ecosystem</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Smooth scroll -->
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    </script>
 </body>
 </html>

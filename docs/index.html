@@ -80,12 +80,13 @@
     <nav class="nav-blur fixed w-full z-50 border-b border-gray-800">
         <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
             <a href="/" class="text-xl font-bold">⏪ StateCLI</a>
-            <div class="flex gap-6 items-center">
+            <div class="hidden md:flex gap-6 items-center">
                 <a href="#why" class="text-gray-300 hover:text-white">Features</a>
                 <a href="#tools" class="text-gray-300 hover:text-white">Tools</a>
                 <a href="#quick-install" class="text-gray-300 hover:text-white">Install</a>
                 <a href="https://github.com/statecli/mcp-server" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium">GitHub</a>
             </div>
+            <a href="https://github.com/statecli/mcp-server" class="md:hidden bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium text-sm">GitHub</a>
         </div>
     </nav>
 
@@ -95,60 +96,60 @@
             <div class="inline-block bg-white/10 backdrop-blur px-4 py-1 rounded-full text-sm mb-6">
                 🚀 v0.3.0 - Now with 27 tools for AI agents
             </div>
-            <h1 class="text-5xl md:text-6xl font-extrabold mb-6 leading-tight">
-                Memory, Replay & Undo<br>for AI Coding Agents
+            <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 leading-tight px-4">
+                Memory, Replay & Undo<br class="hidden sm:block">for AI Coding Agents
             </h1>
-            <p class="text-xl md:text-2xl mb-10 opacity-90 max-w-3xl mx-auto">
+            <p class="text-lg sm:text-xl md:text-2xl mb-10 opacity-90 max-w-3xl mx-auto px-4">
                 Give your AI assistant superpowers. Track every change, rollback mistakes instantly, predict breaking changes before they happen.
             </p>
-            <div class="flex justify-center gap-4 flex-wrap mb-12">
-                <a href="https://www.npmjs.com/package/statecli-mcp-server" class="bg-white text-purple-700 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 hover-lift flex items-center gap-2">
+            <div class="flex flex-col sm:flex-row justify-center gap-4 mb-12 px-4">
+                <a href="https://www.npmjs.com/package/statecli-mcp-server" class="bg-white text-purple-700 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:bg-gray-100 hover-lift flex items-center justify-center gap-2">
                     <span>📦</span> Install from NPM
                 </a>
-                <a href="https://github.com/statecli/mcp-server" class="bg-gray-800/50 backdrop-blur text-white px-8 py-4 rounded-xl font-semibold hover:bg-gray-700 hover-lift flex items-center gap-2 border border-white/20">
+                <a href="https://github.com/statecli/mcp-server" class="bg-gray-800/50 backdrop-blur text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:bg-gray-700 hover-lift flex items-center justify-center gap-2 border border-white/20">
                     <span>⭐</span> Star on GitHub
                 </a>
             </div>
-            <div class="flex justify-center gap-8 text-sm opacity-75">
-                <span>✓ Works with Claude</span>
-                <span>✓ Works with Cursor</span>
-                <span>✓ Works with Windsurf</span>
-                <span>✓ Works with LangChain</span>
+            <div class="flex flex-wrap justify-center gap-4 sm:gap-8 text-xs sm:text-sm opacity-75 px-4">
+                <span>✓ Claude</span>
+                <span>✓ Cursor</span>
+                <span>✓ Windsurf</span>
+                <span>✓ LangChain</span>
             </div>
         </div>
     </div>
 
     <!-- Stats Bar -->
     <div class="bg-gray-800 border-y border-gray-700 py-8">
-        <div class="max-w-5xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        <div class="max-w-5xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 text-center">
             <div>
-                <div class="text-3xl font-bold gradient-text">27</div>
-                <div class="text-gray-400">MCP Tools</div>
+                <div class="text-2xl sm:text-3xl font-bold gradient-text">27</div>
+                <div class="text-gray-400 text-sm sm:text-base">MCP Tools</div>
             </div>
             <div>
-                <div class="text-3xl font-bold gradient-text">2</div>
-                <div class="text-gray-400">Languages</div>
+                <div class="text-2xl sm:text-3xl font-bold gradient-text">2</div>
+                <div class="text-gray-400 text-sm sm:text-base">Languages</div>
             </div>
             <div>
-                <div class="text-3xl font-bold gradient-text">5+</div>
-                <div class="text-gray-400">Integrations</div>
+                <div class="text-2xl sm:text-3xl font-bold gradient-text">5+</div>
+                <div class="text-gray-400 text-sm sm:text-base">Integrations</div>
             </div>
             <div>
-                <div class="text-3xl font-bold gradient-text">MIT</div>
-                <div class="text-gray-400">License</div>
+                <div class="text-2xl sm:text-3xl font-bold gradient-text">MIT</div>
+                <div class="text-gray-400 text-sm sm:text-base">License</div>
             </div>
         </div>
     </div>
 
     <!-- Quick Install -->
     <section id="quick-install" class="max-w-4xl mx-auto px-4 py-16">
-        <h2 class="text-3xl font-bold mb-8 text-center">Quick Install</h2>
-        <div class="code-block p-4 mb-4">
-            <code class="text-green-400">npx statecli-mcp-server</code>
+        <h2 class="text-2xl sm:text-3xl font-bold mb-8 text-center">Quick Install</h2>
+        <div class="code-block p-3 sm:p-4 mb-4 overflow-x-auto">
+            <code class="text-green-400 text-sm sm:text-base">npx statecli-mcp-server</code>
         </div>
-        <p class="text-gray-400 text-center">Or add to your MCP config:</p>
-        <div class="code-block p-4 mt-4">
-<pre class="text-gray-300"><code>{
+        <p class="text-gray-400 text-center text-sm sm:text-base">Or add to your MCP config:</p>
+        <div class="code-block p-3 sm:p-4 mt-4 overflow-x-auto">
+<pre class="text-gray-300 text-xs sm:text-sm"><code>{
   "mcpServers": {
     "statecli": {
       "command": "npx",
@@ -157,13 +158,13 @@
   }
 }</code></pre>
         </div>
-    </div>
+    </section>
 
     <!-- Why -->
     <section id="why" class="bg-gray-800 py-16">
         <div class="max-w-4xl mx-auto px-4">
-            <h2 class="text-3xl font-bold mb-8 text-center">Why AI Agents Need This</h2>
-            <div class="grid md:grid-cols-2 gap-8">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-8 text-center">Why AI Agents Need This</h2>
+            <div class="grid sm:grid-cols-2 gap-6 sm:gap-8">
                 <div class="bg-gray-900 p-6 rounded-lg">
                     <h3 class="text-xl font-semibold mb-2 text-red-400">❌ Problem</h3>
                     <p>"I changed something but don't know what"</p>
@@ -194,9 +195,9 @@
 
     <!-- Tools -->
     <section id="tools" class="max-w-4xl mx-auto px-4 py-16">
-        <h2 class="text-3xl font-bold mb-8 text-center">27 Tools for AI Agents</h2>
+        <h2 class="text-2xl sm:text-3xl font-bold mb-8 text-center">27 Tools for AI Agents</h2>
         
-        <div class="grid md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
             <div class="bg-gray-800 p-4 rounded-lg">
                 <h3 class="font-semibold text-purple-400 mb-2">Core</h3>
                 <ul class="text-sm text-gray-300 space-y-1">
@@ -252,8 +253,8 @@
     <!-- Integrations -->
     <div class="bg-gray-800 py-16">
         <div class="max-w-4xl mx-auto px-4">
-            <h2 class="text-3xl font-bold mb-8 text-center">Works With</h2>
-            <div class="flex justify-center gap-8 flex-wrap text-xl">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-8 text-center">Works With</h2>
+            <div class="flex justify-center gap-4 sm:gap-8 flex-wrap text-base sm:text-xl">
                 <span class="bg-gray-900 px-4 py-2 rounded">🌊 Windsurf</span>
                 <span class="bg-gray-900 px-4 py-2 rounded">⚡ Cursor</span>
                 <span class="bg-gray-900 px-4 py-2 rounded">🤖 Claude</span>
@@ -265,9 +266,9 @@
 
     <!-- Python -->
     <div class="max-w-4xl mx-auto px-4 py-16">
-        <h2 class="text-3xl font-bold mb-8 text-center">Python Integration</h2>
-        <div class="code-block p-4">
-<pre class="text-gray-300"><code>pip install statecli
+        <h2 class="text-2xl sm:text-3xl font-bold mb-8 text-center">Python Integration</h2>
+        <div class="code-block p-3 sm:p-4 overflow-x-auto">
+<pre class="text-gray-300 text-xs sm:text-sm"><code>pip install statecli
 
 from statecli import StateCLI, get_statecli_tools
 
@@ -285,12 +286,12 @@ agent = initialize_agent(tools, llm)</code></pre>
     </div>
 
     <!-- Use Cases Section -->
-    <section id="use-cases" class="py-20 bg-gray-800">
+    <section id="use-cases" class="py-16 sm:py-20 bg-gray-800">
         <div class="max-w-5xl mx-auto px-4">
-            <h2 class="text-3xl font-bold mb-4 text-center">Real-World Use Cases</h2>
-            <p class="text-gray-400 text-center mb-12 max-w-2xl mx-auto">See how AI agents use StateCLI to code more reliably</p>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-4 text-center">Real-World Use Cases</h2>
+            <p class="text-gray-400 text-center mb-8 sm:mb-12 max-w-2xl mx-auto text-sm sm:text-base">See how AI agents use StateCLI to code more reliably</p>
             
-            <div class="grid md:grid-cols-2 gap-8">
+            <div class="grid sm:grid-cols-2 gap-6 sm:gap-8">
                 <article class="glass p-6 rounded-xl hover-lift">
                     <h3 class="text-xl font-semibold mb-3 text-purple-400">🔄 Safe Refactoring</h3>
                     <p class="text-gray-300 mb-4">Before touching core files, the agent checks dependencies and creates a checkpoint. If tests fail, it rolls back instantly.</p>
@@ -319,12 +320,12 @@ agent = initialize_agent(tools, llm)</code></pre>
     </section>
 
     <!-- CTA Section -->
-    <section class="py-20 gradient-bg">
+    <section class="py-16 sm:py-20 gradient-bg">
         <div class="max-w-4xl mx-auto px-4 text-center">
-            <h2 class="text-4xl font-bold mb-6">Ready to Supercharge Your AI Agent?</h2>
-            <p class="text-xl mb-10 opacity-90">Install in 30 seconds. No configuration required.</p>
-            <div class="code-block p-6 max-w-2xl mx-auto mb-8 text-left">
-<pre class="text-gray-300"><code><span class="text-gray-500">// Add to your mcp_config.json</span>
+            <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold mb-6">Ready to Supercharge Your AI Agent?</h2>
+            <p class="text-lg sm:text-xl mb-8 sm:mb-10 opacity-90">Install in 30 seconds. No configuration required.</p>
+            <div class="code-block p-4 sm:p-6 max-w-2xl mx-auto mb-8 text-left overflow-x-auto">
+<pre class="text-gray-300 text-xs sm:text-sm"><code><span class="text-gray-500">// Add to your mcp_config.json</span>
 {
   "<span class="text-green-400">mcpServers</span>": {
     "<span class="text-purple-400">statecli</span>": {
@@ -334,11 +335,11 @@ agent = initialize_agent(tools, llm)</code></pre>
   }
 }</code></pre>
             </div>
-            <div class="flex justify-center gap-4 flex-wrap">
-                <a href="https://www.npmjs.com/package/statecli-mcp-server" class="bg-white text-purple-700 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 hover-lift">
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <a href="https://www.npmjs.com/package/statecli-mcp-server" class="bg-white text-purple-700 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:bg-gray-100 hover-lift">
                     Get Started with NPM
                 </a>
-                <a href="https://pypi.org/project/statecli/" class="bg-gray-900/50 backdrop-blur text-white px-8 py-4 rounded-xl font-semibold hover:bg-gray-800 hover-lift border border-white/20">
+                <a href="https://pypi.org/project/statecli/" class="bg-gray-900/50 backdrop-blur text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:bg-gray-800 hover-lift border border-white/20">
                     Install Python Package
                 </a>
             </div>
@@ -348,7 +349,7 @@ agent = initialize_agent(tools, llm)</code></pre>
     <!-- Footer -->
     <footer class="bg-gray-900 border-t border-gray-800 py-12">
         <div class="max-w-5xl mx-auto px-4">
-            <div class="grid md:grid-cols-4 gap-8 mb-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-8">
                 <div>
                     <h4 class="font-bold mb-4">⏪ StateCLI</h4>
                     <p class="text-gray-400 text-sm">Memory, replay, and undo for AI coding agents.</p>

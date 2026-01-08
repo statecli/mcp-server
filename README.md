@@ -45,26 +45,70 @@ Agent Thought: "I need to understand my past behavior"
 
 ---
 
-## Core MCP Tools (5 Tools)
+---
 
-These 5 tools give agents memory and self-awareness:
+## Two Ways to Use StateCLI
 
-### `statecli_replay` 
-**What it does:** Show what the agent just did, step-by-step  
-**Agent uses when:** "I need to see what I changed"  
-**Input:**
+### 1. For Developers: Auto-Tracking Mode 🔥
+
+**Start watching your project:**
+```bash
+statecli watch start --auto-checkpoint
+```
+
+Now StateCLI automatically:
+- ✅ Tracks every file save
+- ✅ Creates checkpoints every 15 min
+- ✅ Lets you undo any mistake
+- ✅ Shows what changed recently
+
+**See what changed:**
+```bash
+statecli diff --time 5m
+```
+
+**Undo mistakes:**
+```bash
+statecli undo
+```
+
+👉 **[Full Developer Guide](./DEVELOPER_GUIDE.md)**
+
+---
+
+### 2. For AI Agents: MCP Tools
+
+**5 core tools for agent memory & self-awareness:**
+
+- `statecli_replay` - Show what the agent just did
+- `statecli_undo` - Rollback mistakes
+- `statecli_checkpoint` - Save state before risky ops
+- `statecli_log` - View complete history
+- `statecli_track` - Track important state changes
+
+**MCP Setup:**
 ```json
 {
-  "entity": "file:src/index.ts"
+  "mcpServers": {
+    "statecli": {
+      "command": "npx",
+      "args": ["-y", "statecli-mcp-server"]
+    }
+  }
+}
+```
 
-Problem: "I broke something and need to undo"
-Solution: statecli_undo(entity) → Rollback instantly
+---
 
-Problem: "I want to try something risky"
-Solution: statecli_checkpoint(entity) → Save first, rollback if needed
+## Quick Install
 
-Problem: "I need to understand my past behavior"
-Solution: statecli_log(entity) → View complete history
+```bash
+# Global install
+npm install -g statecli-mcp-server
+
+# Start auto-tracking
+cd your-project
+statecli watch start --auto-checkpoint
 ```
 
 ---

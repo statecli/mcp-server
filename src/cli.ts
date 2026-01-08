@@ -150,6 +150,14 @@ program
     await server.run();
   });
 
+// Import new commands
+import { createWatchCommand } from './commands/watch';
+import { createDiffCommand } from './commands/diff';
+
+// Register new commands
+createWatchCommand(program);
+createDiffCommand(program);
+
 program
   .command('init')
   .description('Initialize StateCLI configuration')

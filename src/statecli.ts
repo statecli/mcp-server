@@ -144,6 +144,68 @@ export class StateCLI {
     return this.storage.listEntities();
   }
 
+  trackFile(
+    entity: string,
+    beforeContent: string,
+    afterContent: string,
+    actor: string = 'system'
+  ): TrackResult {
+    const [entityType, entityId] = entity.includes(':') 
+      ? entity.split(':') 
+      : ['file', entity];
+    
+    return this.track(entityType, entityId, {
+      before: beforeContent,
+      after: afterContent,
+      diff: this.generateSimpleDiff(beforeContent, afterContent)
+    }, actor);
+  }
+
+  previewUndo(
+    entity: string,
+    steps: number = 1
+  ): {
+    entity: string;
+    stepsToUndo: number;
+    currentStateIndex: number;
+    targetStateIndex: number;
+    affectedChanges: Array<{ timestamp: string; state: Record<string, unknown> }>;
+  } {
+    const changes = this.storage.getChanges(entity, {});
+    const currentIndex = changes.length;
+    const targetIndex = Math.max(0, currentIndex - steps);
+    
+    const affectedChanges = changes.slice(targetIndex, currentIndex).map(change => ({
+      timestamp: change.timestamp,
+      state: change.after as Record<string, unknown>
+    }));
+
+    return {
+      entity,
+      stepsToUndo: steps,
+      currentStateIndex: currentIndex,
+      targetStateIndex: targetIndex,
+      affectedChanges
+    };
+  }
+
+  private generateSimpleDiff(before: string, after: string): string {
+    const beforeLines = before.split('\n');
+    const afterLines = after.split('\n');
+    
+    let diff = '';
+    const maxLen = Math.max(beforeLines.length, afterLines.length);
+    
+    for (let i = 0; i < maxLen; i++) {
+      if (beforeLines[i] !== afterLines[i]) {
+        if (beforeLines[i]) diff += `- ${beforeLines[i]}\n`;
+        if (afterLines[i]) diff += `+ ${afterLines[i]}\n`;
+      }
+    }
+    
+    return diff || '(no changes)';
+  }
+
   close(): void {
     this.storage.close();
   }

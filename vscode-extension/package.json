@@ -2,7 +2,7 @@
   "name": "statecli",
   "displayName": "StateCLI - AI Agent Memory & Undo",
   "description": "Memory, replay, and undo capability for AI coding agents. One-click MCP server setup.",
-  "version": "0.3.4",
+  "version": "0.5.0",
   "publisher": "statecli",
   "icon": "icon.png",
   "repository": {
@@ -98,6 +98,11 @@
         "command": "statecli.refresh",
         "title": "Refresh",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "statecli.toggleTracking",
+        "title": "StateCLI: Toggle Auto-Tracking",
+        "icon": "$(eye)"
       }
     ],
     "menus": {
@@ -138,6 +143,11 @@
           "type": "string",
           "default": "",
           "description": "Custom path to MCP config file (leave empty for default)"
+        },
+        "statecli.autoTrack": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start tracking file changes on activation"
         }
       }
     }

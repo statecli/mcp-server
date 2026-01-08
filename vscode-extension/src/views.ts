@@ -1,24 +1,14 @@
 import * as vscode from 'vscode';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
-
-interface HistoryItem {
-    timestamp: string;
-    entity: string;
-    action: string;
-}
-
-interface Checkpoint {
-    name: string;
-    entity: string;
-    timestamp: string;
-}
+import { FileTracker } from './file-tracker';
 
 export class HistoryViewProvider implements vscode.TreeDataProvider<HistoryTreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<HistoryTreeItem | undefined | null | void> = new vscode.EventEmitter<HistoryTreeItem | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<HistoryTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+    private fileTracker: FileTracker | null = null;
+
+    setFileTracker(tracker: FileTracker): void {
+        this.fileTracker = tracker;
+    }
 
     refresh(): void {
         this._onDidChangeTreeData.fire();
@@ -29,26 +19,48 @@ export class HistoryViewProvider implements vscode.TreeDataProvider<HistoryTreeI
     }
 
     async getChildren(element?: HistoryTreeItem): Promise<HistoryTreeItem[]> {
-        if (!element) {
-            try {
-                const { stdout } = await execAsync('npx -y statecli-mcp-server log --json');
-                const history: HistoryItem[] = JSON.parse(stdout);
-                return history.slice(0, 20).map(item => new HistoryTreeItem(
-                    `${item.entity} - ${item.action}`,
-                    item.timestamp,
-                    vscode.TreeItemCollapsibleState.None
-                ));
-            } catch (error) {
-                return [new HistoryTreeItem('No history yet', 'Track changes to see them here', vscode.TreeItemCollapsibleState.None)];
+        if (!element && this.fileTracker) {
+            const changes = this.fileTracker.getRecentChanges(20);
+            
+            if (changes.length === 0) {
+                return [new HistoryTreeItem(
+                    'No changes tracked yet',
+                    'Save files to track changes',
+                    vscode.TreeItemCollapsibleState.None,
+                    'info'
+                )];
             }
+            
+            return changes.map(change => new HistoryTreeItem(
+                change.fileName,
+                this.formatTime(change.timestamp),
+                vscode.TreeItemCollapsibleState.None,
+                'history',
+                change.filePath
+            ));
         }
         return [];
+    }
+
+    private formatTime(date: Date): string {
+        const now = new Date();
+        const diff = now.getTime() - date.getTime();
+        
+        if (diff < 60000) return 'just now';
+        if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+        if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+        return date.toLocaleDateString();
     }
 }
 
 export class CheckpointsViewProvider implements vscode.TreeDataProvider<CheckpointTreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<CheckpointTreeItem | undefined | null | void> = new vscode.EventEmitter<CheckpointTreeItem | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<CheckpointTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+    private fileTracker: FileTracker | null = null;
+
+    setFileTracker(tracker: FileTracker): void {
+        this.fileTracker = tracker;
+    }
 
     refresh(): void {
         this._onDidChangeTreeData.fire();
@@ -59,36 +71,62 @@ export class CheckpointsViewProvider implements vscode.TreeDataProvider<Checkpoi
     }
 
     async getChildren(element?: CheckpointTreeItem): Promise<CheckpointTreeItem[]> {
-        if (!element) {
-            try {
-                const { stdout } = await execAsync('npx -y statecli-mcp-server list-checkpoints --json');
-                const checkpoints: Checkpoint[] = JSON.parse(stdout);
-                return checkpoints.map(cp => new CheckpointTreeItem(
-                    cp.name,
-                    cp.entity,
-                    cp.timestamp,
+        if (!element && this.fileTracker) {
+            const checkpoints = this.fileTracker.getCheckpoints();
+            
+            if (checkpoints.length === 0) {
+                return [new CheckpointTreeItem(
+                    'No checkpoints',
+                    'Create a checkpoint to save state',
+                    '',
                     vscode.TreeItemCollapsibleState.None
-                ));
-            } catch (error) {
-                return [new CheckpointTreeItem('No checkpoints', 'Create a checkpoint to save state', '', vscode.TreeItemCollapsibleState.None)];
+                )];
             }
+            
+            return checkpoints.map(cp => new CheckpointTreeItem(
+                cp.name,
+                `${cp.files.size} files`,
+                this.formatTime(cp.timestamp),
+                vscode.TreeItemCollapsibleState.None
+            ));
         }
         return [];
+    }
+
+    private formatTime(date: Date): string {
+        return date.toLocaleTimeString();
     }
 }
 
 export class ActionsViewProvider implements vscode.TreeDataProvider<ActionTreeItem> {
+    private _onDidChangeTreeData: vscode.EventEmitter<ActionTreeItem | undefined | null | void> = new vscode.EventEmitter<ActionTreeItem | undefined | null | void>();
+    readonly onDidChangeTreeData: vscode.Event<ActionTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+    private fileTracker: FileTracker | null = null;
+
+    setFileTracker(tracker: FileTracker): void {
+        this.fileTracker = tracker;
+    }
+
+    refresh(): void {
+        this._onDidChangeTreeData.fire();
+    }
+
     getTreeItem(element: ActionTreeItem): vscode.TreeItem {
         return element;
     }
 
     getChildren(element?: ActionTreeItem): Promise<ActionTreeItem[]> {
         if (!element) {
+            const isTracking = this.fileTracker?.isActive() || false;
+            
             return Promise.resolve([
+                new ActionTreeItem(
+                    isTracking ? '🔴 Stop Tracking' : '🟢 Start Tracking',
+                    'statecli.toggleTracking',
+                    isTracking ? 'Stop auto-tracking file changes' : 'Start auto-tracking file changes'
+                ),
                 new ActionTreeItem('📌 Create Checkpoint', 'statecli.checkpoint', 'Save current state before making changes'),
-                new ActionTreeItem('👁️ Track Current File', 'statecli.trackCurrentFile', 'Start tracking changes to the active file'),
                 new ActionTreeItem('⏪ Undo Last Change', 'statecli.undo', 'Rollback the most recent change'),
-                new ActionTreeItem('📜 View History', 'statecli.viewHistory', 'See all tracked changes'),
                 new ActionTreeItem('⚙️ Setup MCP Server', 'statecli.setup', 'Configure StateCLI for AI agents'),
                 new ActionTreeItem('🔧 Show All Tools', 'statecli.showTools', 'View all 27 available tools')
             ]);
@@ -101,11 +139,21 @@ class HistoryTreeItem extends vscode.TreeItem {
     constructor(
         public readonly label: string,
         public readonly description: string,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState
+        public readonly collapsibleState: vscode.TreeItemCollapsibleState,
+        public readonly iconType: string = 'history',
+        public readonly filePath?: string
     ) {
         super(label, collapsibleState);
-        this.tooltip = `${this.label} - ${description}`;
-        this.iconPath = new vscode.ThemeIcon('history');
+        this.tooltip = filePath ? `${filePath}\n${description}` : description;
+        this.iconPath = new vscode.ThemeIcon(iconType);
+        
+        if (filePath) {
+            this.command = {
+                command: 'vscode.open',
+                title: 'Open File',
+                arguments: [vscode.Uri.file(filePath)]
+            };
+        }
     }
 }
 

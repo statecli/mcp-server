@@ -40,6 +40,7 @@ const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const os = __importStar(require("os"));
 const views_1 = require("./views");
+const file_tracker_1 = require("./file-tracker");
 const MCP_CONFIG = {
     mcpServers: {
         statecli: {
@@ -88,28 +89,78 @@ const TOOLS_INFO = `
 `;
 function activate(context) {
     console.log('StateCLI extension activated');
+    // Create file tracker
+    const fileTracker = new file_tracker_1.FileTracker();
+    context.subscriptions.push({ dispose: () => fileTracker.dispose() });
     // Register tree view providers
     const historyProvider = new views_1.HistoryViewProvider();
     const checkpointsProvider = new views_1.CheckpointsViewProvider();
     const actionsProvider = new views_1.ActionsViewProvider();
+    // Connect file tracker to providers
+    historyProvider.setFileTracker(fileTracker);
+    checkpointsProvider.setFileTracker(fileTracker);
+    actionsProvider.setFileTracker(fileTracker);
+    // Auto-refresh views when changes happen
+    fileTracker.setOnChangeCallback(() => {
+        historyProvider.refresh();
+        checkpointsProvider.refresh();
+    });
     vscode.window.registerTreeDataProvider('statecli.historyView', historyProvider);
     vscode.window.registerTreeDataProvider('statecli.checkpointsView', checkpointsProvider);
     vscode.window.registerTreeDataProvider('statecli.actionsView', actionsProvider);
-    // Auto-setup if enabled
+    // Listen for file saves
+    context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(doc => {
+        fileTracker.onDocumentSave(doc);
+    }));
+    // Listen for file opens
+    context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(doc => {
+        fileTracker.onDocumentOpen(doc);
+    }));
+    // Auto-setup MCP if enabled
     const config = vscode.workspace.getConfiguration('statecli');
     if (config.get('autoSetup')) {
         setupMCPConfig(false);
     }
+    // Auto-start tracking if enabled
+    if (config.get('autoTrack')) {
+        fileTracker.startTracking();
+    }
     // Register commands
-    context.subscriptions.push(vscode.commands.registerCommand('statecli.setup', () => setupMCPConfig(true)), vscode.commands.registerCommand('statecli.showTools', showTools), vscode.commands.registerCommand('statecli.checkpoint', () => createCheckpoint(checkpointsProvider)), vscode.commands.registerCommand('statecli.replay', replayChanges), vscode.commands.registerCommand('statecli.undo', () => undoLastChange(historyProvider)), vscode.commands.registerCommand('statecli.trackCurrentFile', () => trackCurrentFile(historyProvider)), vscode.commands.registerCommand('statecli.viewHistory', () => viewHistory(historyProvider)), vscode.commands.registerCommand('statecli.refresh', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('statecli.setup', () => setupMCPConfig(true)), vscode.commands.registerCommand('statecli.showTools', showTools), vscode.commands.registerCommand('statecli.checkpoint', () => {
+        createCheckpointWithTracker(fileTracker, checkpointsProvider);
+    }), vscode.commands.registerCommand('statecli.replay', replayChanges), vscode.commands.registerCommand('statecli.undo', () => {
+        fileTracker.undoLastChange();
+        historyProvider.refresh();
+    }), vscode.commands.registerCommand('statecli.trackCurrentFile', () => {
+        if (!fileTracker.isActive()) {
+            fileTracker.startTracking();
+        }
+        historyProvider.refresh();
+    }), vscode.commands.registerCommand('statecli.viewHistory', () => {
+        historyProvider.refresh();
+    }), vscode.commands.registerCommand('statecli.toggleTracking', () => {
+        fileTracker.toggleTracking();
+        actionsProvider.refresh();
+    }), vscode.commands.registerCommand('statecli.refresh', () => {
         historyProvider.refresh();
         checkpointsProvider.refresh();
+        actionsProvider.refresh();
     }));
     // Show welcome message on first install
     const hasShownWelcome = context.globalState.get('hasShownWelcome');
     if (!hasShownWelcome) {
         showWelcomeMessage();
         context.globalState.update('hasShownWelcome', true);
+    }
+}
+async function createCheckpointWithTracker(fileTracker, checkpointsProvider) {
+    const name = await vscode.window.showInputBox({
+        prompt: 'Checkpoint name',
+        placeHolder: 'e.g., before-refactor'
+    });
+    if (name) {
+        fileTracker.createCheckpoint(name);
+        checkpointsProvider.refresh();
     }
 }
 function getMCPConfigPath() {

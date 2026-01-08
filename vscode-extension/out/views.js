@@ -35,13 +35,14 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ActionsViewProvider = exports.CheckpointsViewProvider = exports.HistoryViewProvider = void 0;
 const vscode = __importStar(require("vscode"));
-const child_process_1 = require("child_process");
-const util_1 = require("util");
-const execAsync = (0, util_1.promisify)(child_process_1.exec);
 class HistoryViewProvider {
     constructor() {
         this._onDidChangeTreeData = new vscode.EventEmitter();
         this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+        this.fileTracker = null;
+    }
+    setFileTracker(tracker) {
+        this.fileTracker = tracker;
     }
     refresh() {
         this._onDidChangeTreeData.fire();
@@ -50,17 +51,25 @@ class HistoryViewProvider {
         return element;
     }
     async getChildren(element) {
-        if (!element) {
-            try {
-                const { stdout } = await execAsync('npx -y statecli-mcp-server log --json');
-                const history = JSON.parse(stdout);
-                return history.slice(0, 20).map(item => new HistoryTreeItem(`${item.entity} - ${item.action}`, item.timestamp, vscode.TreeItemCollapsibleState.None));
+        if (!element && this.fileTracker) {
+            const changes = this.fileTracker.getRecentChanges(20);
+            if (changes.length === 0) {
+                return [new HistoryTreeItem('No changes tracked yet', 'Save files to track changes', vscode.TreeItemCollapsibleState.None, 'info')];
             }
-            catch (error) {
-                return [new HistoryTreeItem('No history yet', 'Track changes to see them here', vscode.TreeItemCollapsibleState.None)];
-            }
+            return changes.map(change => new HistoryTreeItem(change.fileName, this.formatTime(change.timestamp), vscode.TreeItemCollapsibleState.None, 'history', change.filePath));
         }
         return [];
+    }
+    formatTime(date) {
+        const now = new Date();
+        const diff = now.getTime() - date.getTime();
+        if (diff < 60000)
+            return 'just now';
+        if (diff < 3600000)
+            return `${Math.floor(diff / 60000)}m ago`;
+        if (diff < 86400000)
+            return `${Math.floor(diff / 3600000)}h ago`;
+        return date.toLocaleDateString();
     }
 }
 exports.HistoryViewProvider = HistoryViewProvider;
@@ -68,6 +77,10 @@ class CheckpointsViewProvider {
     constructor() {
         this._onDidChangeTreeData = new vscode.EventEmitter();
         this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+        this.fileTracker = null;
+    }
+    setFileTracker(tracker) {
+        this.fileTracker = tracker;
     }
     refresh() {
         this._onDidChangeTreeData.fire();
@@ -76,31 +89,42 @@ class CheckpointsViewProvider {
         return element;
     }
     async getChildren(element) {
-        if (!element) {
-            try {
-                const { stdout } = await execAsync('npx -y statecli-mcp-server list-checkpoints --json');
-                const checkpoints = JSON.parse(stdout);
-                return checkpoints.map(cp => new CheckpointTreeItem(cp.name, cp.entity, cp.timestamp, vscode.TreeItemCollapsibleState.None));
-            }
-            catch (error) {
+        if (!element && this.fileTracker) {
+            const checkpoints = this.fileTracker.getCheckpoints();
+            if (checkpoints.length === 0) {
                 return [new CheckpointTreeItem('No checkpoints', 'Create a checkpoint to save state', '', vscode.TreeItemCollapsibleState.None)];
             }
+            return checkpoints.map(cp => new CheckpointTreeItem(cp.name, `${cp.files.size} files`, this.formatTime(cp.timestamp), vscode.TreeItemCollapsibleState.None));
         }
         return [];
+    }
+    formatTime(date) {
+        return date.toLocaleTimeString();
     }
 }
 exports.CheckpointsViewProvider = CheckpointsViewProvider;
 class ActionsViewProvider {
+    constructor() {
+        this._onDidChangeTreeData = new vscode.EventEmitter();
+        this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+        this.fileTracker = null;
+    }
+    setFileTracker(tracker) {
+        this.fileTracker = tracker;
+    }
+    refresh() {
+        this._onDidChangeTreeData.fire();
+    }
     getTreeItem(element) {
         return element;
     }
     getChildren(element) {
         if (!element) {
+            const isTracking = this.fileTracker?.isActive() || false;
             return Promise.resolve([
+                new ActionTreeItem(isTracking ? '🔴 Stop Tracking' : '🟢 Start Tracking', 'statecli.toggleTracking', isTracking ? 'Stop auto-tracking file changes' : 'Start auto-tracking file changes'),
                 new ActionTreeItem('📌 Create Checkpoint', 'statecli.checkpoint', 'Save current state before making changes'),
-                new ActionTreeItem('👁️ Track Current File', 'statecli.trackCurrentFile', 'Start tracking changes to the active file'),
                 new ActionTreeItem('⏪ Undo Last Change', 'statecli.undo', 'Rollback the most recent change'),
-                new ActionTreeItem('📜 View History', 'statecli.viewHistory', 'See all tracked changes'),
                 new ActionTreeItem('⚙️ Setup MCP Server', 'statecli.setup', 'Configure StateCLI for AI agents'),
                 new ActionTreeItem('🔧 Show All Tools', 'statecli.showTools', 'View all 27 available tools')
             ]);
@@ -110,13 +134,22 @@ class ActionsViewProvider {
 }
 exports.ActionsViewProvider = ActionsViewProvider;
 class HistoryTreeItem extends vscode.TreeItem {
-    constructor(label, description, collapsibleState) {
+    constructor(label, description, collapsibleState, iconType = 'history', filePath) {
         super(label, collapsibleState);
         this.label = label;
         this.description = description;
         this.collapsibleState = collapsibleState;
-        this.tooltip = `${this.label} - ${description}`;
-        this.iconPath = new vscode.ThemeIcon('history');
+        this.iconType = iconType;
+        this.filePath = filePath;
+        this.tooltip = filePath ? `${filePath}\n${description}` : description;
+        this.iconPath = new vscode.ThemeIcon(iconType);
+        if (filePath) {
+            this.command = {
+                command: 'vscode.open',
+                title: 'Open File',
+                arguments: [vscode.Uri.file(filePath)]
+            };
+        }
     }
 }
 class CheckpointTreeItem extends vscode.TreeItem {

@@ -2,7 +2,7 @@
   "name": "statecli",
   "displayName": "StateCLI - AI Agent Memory & Undo",
   "description": "Memory, replay, and undo capability for AI coding agents. One-click MCP server setup.",
-  "version": "0.3.0",
+  "version": "0.3.4",
   "publisher": "statecli",
   "icon": "icon.png",
   "repository": {
@@ -33,28 +33,99 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "statecli-sidebar",
+          "title": "StateCLI",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "statecli-sidebar": [
+        {
+          "id": "statecli.historyView",
+          "name": "Change History"
+        },
+        {
+          "id": "statecli.checkpointsView",
+          "name": "Checkpoints"
+        },
+        {
+          "id": "statecli.actionsView",
+          "name": "Quick Actions"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "statecli.setup",
-        "title": "StateCLI: Setup MCP Server"
+        "title": "StateCLI: Setup MCP Server",
+        "icon": "$(gear)"
       },
       {
         "command": "statecli.showTools",
-        "title": "StateCLI: Show Available Tools"
+        "title": "StateCLI: Show Available Tools",
+        "icon": "$(tools)"
       },
       {
         "command": "statecli.checkpoint",
-        "title": "StateCLI: Create Checkpoint"
+        "title": "StateCLI: Create Checkpoint",
+        "icon": "$(bookmark)"
       },
       {
         "command": "statecli.replay",
-        "title": "StateCLI: Replay Changes"
+        "title": "StateCLI: Replay Changes",
+        "icon": "$(history)"
       },
       {
         "command": "statecli.undo",
-        "title": "StateCLI: Undo Last Change"
+        "title": "StateCLI: Undo Last Change",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "statecli.trackCurrentFile",
+        "title": "StateCLI: Track Current File",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "statecli.viewHistory",
+        "title": "StateCLI: View History",
+        "icon": "$(list-unordered)"
+      },
+      {
+        "command": "statecli.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "statecli.refresh",
+          "when": "view == statecli.historyView",
+          "group": "navigation"
+        },
+        {
+          "command": "statecli.checkpoint",
+          "when": "view == statecli.checkpointsView",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "statecli.trackCurrentFile",
+          "group": "statecli",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "statecli.undo",
+          "group": "statecli",
+          "when": "editorTextFocus"
+        }
+      ]
+    },
     "configuration": {
       "title": "StateCLI",
       "properties": {

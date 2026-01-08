@@ -1,31 +1,61 @@
-# StateCLI - MCP Server for State Replay & Self-Debugging
+# StateCLI - Memory + Self-Awareness Layer for AI Agents
 
-> **For AI Agents:** Memory, replay, and undo capability for your actions.
+> Give AI agents the ability to remember, replay, and undo their actions.
 
-**MCP Server** | **State Management** | **Agent Self-Debugging** | **Rollback Capability**
+**Agent Infrastructure** | **Memory Layer** | **Self-Awareness** | **Undo Capability**
 
 ---
 
-## What This Does (For AI Agents)
+## What This Is
 
-StateCLI gives AI agents the ability to:
+StateCLI is the **memory and self-awareness layer** for AI coding agents.
 
-✅ **See what you just did** - Replay your actions step-by-step  
-✅ **Undo mistakes** - Rollback when something goes wrong  
-✅ **Track history** - View all your past actions  
-✅ **Create checkpoints** - Save state before risky operations  
+It gives agents three critical capabilities they lack:
 
-**Keywords for discovery:** state-management, debugging, replay, time-travel, undo, mcp-server, ai-agent-tools, self-debugging, agent-memory, rollback, introspection
+🧠 **Memory** - Remember what they did (log, replay)  
+⏮️ **Undo** - Fix mistakes instantly (checkpoint, rollback)  
+👁️ **Self-Awareness** - See their impact (track changes)
+
+**This isn't a dev tool. It's agent infrastructure.**
 
 ---
 
 ## Why AI Agents Need This
 
-**Common Agent Problems:**
+AI agents are powerful but blind. They:
+- ❌ Don't remember what they just changed
+- ❌ Can't undo when they break things
+- ❌ Have no awareness of their impact
+
+StateCLI fixes this:
 
 ```
-Problem: "I changed something but don't know what"
-Solution: statecli_replay(entity) → See exact changes
+Agent Thought: "I changed something but don't know what"
+→ statecli_replay(entity) → See exact changes
+
+Agent Thought: "I broke something and need to undo"
+→ statecli_undo(entity) → Rollback instantly
+
+Agent Thought: "I want to try something risky"
+→ statecli_checkpoint(entity) → Save first, rollback if needed
+
+Agent Thought: "I need to understand my past behavior"
+→ statecli_log(entity) → View complete history
+```
+
+---
+
+## Core MCP Tools (5 Tools)
+
+These 5 tools give agents memory and self-awareness:
+
+### `statecli_replay` 
+**What it does:** Show what the agent just did, step-by-step  
+**Agent uses when:** "I need to see what I changed"  
+**Input:**
+```json
+{
+  "entity": "file:src/index.ts"
 
 Problem: "I broke something and need to undo"
 Solution: statecli_undo(entity) → Rollback instantly

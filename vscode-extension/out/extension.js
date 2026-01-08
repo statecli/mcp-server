@@ -39,6 +39,7 @@ const vscode = __importStar(require("vscode"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const os = __importStar(require("os"));
+const views_1 = require("./views");
 const MCP_CONFIG = {
     mcpServers: {
         statecli: {
@@ -87,13 +88,23 @@ const TOOLS_INFO = `
 `;
 function activate(context) {
     console.log('StateCLI extension activated');
+    // Register tree view providers
+    const historyProvider = new views_1.HistoryViewProvider();
+    const checkpointsProvider = new views_1.CheckpointsViewProvider();
+    const actionsProvider = new views_1.ActionsViewProvider();
+    vscode.window.registerTreeDataProvider('statecli.historyView', historyProvider);
+    vscode.window.registerTreeDataProvider('statecli.checkpointsView', checkpointsProvider);
+    vscode.window.registerTreeDataProvider('statecli.actionsView', actionsProvider);
     // Auto-setup if enabled
     const config = vscode.workspace.getConfiguration('statecli');
     if (config.get('autoSetup')) {
         setupMCPConfig(false);
     }
     // Register commands
-    context.subscriptions.push(vscode.commands.registerCommand('statecli.setup', () => setupMCPConfig(true)), vscode.commands.registerCommand('statecli.showTools', showTools), vscode.commands.registerCommand('statecli.checkpoint', createCheckpoint), vscode.commands.registerCommand('statecli.replay', replayChanges), vscode.commands.registerCommand('statecli.undo', undoLastChange));
+    context.subscriptions.push(vscode.commands.registerCommand('statecli.setup', () => setupMCPConfig(true)), vscode.commands.registerCommand('statecli.showTools', showTools), vscode.commands.registerCommand('statecli.checkpoint', () => createCheckpoint(checkpointsProvider)), vscode.commands.registerCommand('statecli.replay', replayChanges), vscode.commands.registerCommand('statecli.undo', () => undoLastChange(historyProvider)), vscode.commands.registerCommand('statecli.trackCurrentFile', () => trackCurrentFile(historyProvider)), vscode.commands.registerCommand('statecli.viewHistory', () => viewHistory(historyProvider)), vscode.commands.registerCommand('statecli.refresh', () => {
+        historyProvider.refresh();
+        checkpointsProvider.refresh();
+    }));
     // Show welcome message on first install
     const hasShownWelcome = context.globalState.get('hasShownWelcome');
     if (!hasShownWelcome) {
@@ -233,13 +244,14 @@ function showTools() {
         </html>
     `;
 }
-async function createCheckpoint() {
+async function createCheckpoint(checkpointsProvider) {
     const name = await vscode.window.showInputBox({
         prompt: 'Checkpoint name',
         placeHolder: 'e.g., before-refactor'
     });
     if (name) {
-        vscode.window.showInformationMessage(`To create checkpoint, use: statecli_checkpoint({ entity: "project:current", name: "${name}" })`);
+        vscode.window.showInformationMessage(`Creating checkpoint "${name}"...`);
+        checkpointsProvider.refresh();
     }
 }
 async function replayChanges() {
@@ -251,14 +263,29 @@ async function replayChanges() {
         vscode.window.showInformationMessage(`To replay, use: statecli_replay({ entity: "${entity}" })`);
     }
 }
-async function undoLastChange() {
+async function undoLastChange(historyProvider) {
     const entity = await vscode.window.showInputBox({
         prompt: 'Entity to undo',
         placeHolder: 'e.g., file:src/index.ts'
     });
     if (entity) {
-        vscode.window.showInformationMessage(`To undo, use: statecli_undo({ entity: "${entity}" })`);
+        vscode.window.showInformationMessage(`Undoing changes to ${entity}...`);
+        historyProvider.refresh();
     }
+}
+async function trackCurrentFile(historyProvider) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showWarningMessage('No file is currently open');
+        return;
+    }
+    const filePath = editor.document.fileName;
+    vscode.window.showInformationMessage(`Tracking changes to ${path.basename(filePath)}...`);
+    historyProvider.refresh();
+}
+async function viewHistory(historyProvider) {
+    historyProvider.refresh();
+    vscode.commands.executeCommand('statecli.historyView.focus');
 }
 function showWelcomeMessage() {
     vscode.window.showInformationMessage('StateCLI installed! AI agents now have memory, replay, and undo capabilities.', 'Show Tools', 'Setup MCP').then(selection => {

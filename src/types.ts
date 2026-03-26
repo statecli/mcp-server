@@ -77,6 +77,7 @@ export interface StateCLIConfig {
     days: number;
     maxChangesPerEntity: number;
   };
+  sessionNamespace?: string;
 }
 
 export const DEFAULT_CONFIG: StateCLIConfig = {
@@ -91,5 +92,6 @@ export const DEFAULT_CONFIG: StateCLIConfig = {
   retention: {
     days: 30,
     maxChangesPerEntity: 1000
-  }
+  },
+  sessionNamespace: 'default'
 };

@@ -441,6 +441,8 @@ export class EnhancedStateCLIMCPServer {
   private rollbackPreview: RollbackPreview;
   private crossFileImpact: CrossFileImpact;
   private semanticMemory: SemanticMemory;
+  private knowledgeTracker: KnowledgeTracker;
+  private sharedSession: SharedSession;
 
   constructor(config?: Partial<StateCLIConfig>) {
     this.statecli = new StateCLI(config);
@@ -453,6 +455,8 @@ export class EnhancedStateCLIMCPServer {
     this.rollbackPreview = new RollbackPreview(this.statecli);
     this.crossFileImpact = new CrossFileImpact(this.statecli);
     this.semanticMemory = new SemanticMemory(this.statecli);
+    this.knowledgeTracker = new KnowledgeTracker(this.statecli);
+    this.sharedSession = new SharedSession({ namespace: config?.sessionNamespace || 'default' });
 
     this.server = new Server(
       { name: 'statecli-enhanced', version: '3.1.0' },
@@ -572,6 +576,23 @@ export class EnhancedStateCLIMCPServer {
             break;
           case 'statecli_safe_change_order':
             result = this.handleSafeChangeOrder(args as any);
+            break;
+
+          // Knowledge (v0.5.0)
+          case 'statecli_search_web':
+            result = await this.knowledgeTracker.searchWeb((args as any).query);
+            break;
+          case 'statecli_read_url':
+            result = await this.knowledgeTracker.readUrl((args as any).url);
+            break;
+
+          // Shared Sessions (v0.5.0)
+          case 'statecli_join_session':
+            result = { content: [{ type: 'text', text: JSON.stringify(this.sharedSession.join(), null, 2) }] };
+            break;
+          case 'statecli_leave_session':
+            this.sharedSession.leave();
+            result = { content: [{ type: 'text', text: 'Left shared session' }] };
             break;
 
           default:

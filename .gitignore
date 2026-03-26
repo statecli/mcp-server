@@ -9,3 +9,6 @@ coverage/
 *.db-journal
 .mcpregistry_*
 mcp-publisher.exe
+.npmrc
+*.vsix
+publisher_full_token

@@ -1,6 +1,6 @@
 {
   "name": "statecli-mcp-server",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "mcpName": "io.github.charo360/statecli",
   "description": "Memory and self-awareness layer for AI agents - MCP server for state tracking, replay, and undo",
   "main": "./dist/index.js",

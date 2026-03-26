@@ -3,12 +3,13 @@
   "builds": [
     { "src": "dist/enhanced-mcp-server.js", "use": "@vercel/node" },
     { "src": "dashboard/server.js", "use": "@vercel/node" },
-    { "src": "dashboard/index.html", "use": "@vercel/static" }
+    { "src": "dashboard/index.html", "use": "@vercel/static" },
+    { "src": "docs/index.html", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/mcp", "dest": "dist/enhanced-mcp-server.js" },
     { "src": "/api/(.*)", "dest": "dashboard/server.js" },
     { "src": "/dashboard", "dest": "dashboard/index.html" },
-    { "src": "/", "dest": "dashboard/index.html" }
+    { "src": "/", "dest": "docs/index.html" }
   ]
 }

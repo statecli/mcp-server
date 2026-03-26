@@ -94,13 +94,13 @@
     <div class="gradient-bg pt-32 pb-24">
         <div class="max-w-5xl mx-auto px-4 text-center">
             <div class="inline-block bg-white/10 backdrop-blur px-4 py-1 rounded-full text-sm mb-6">
-                🚀 v0.3.0 - Now with 27 tools for AI agents
+                🚀 v0.5.0 - Now with 31 tools for AI agents
             </div>
             <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 leading-tight px-4">
-                Memory + Self-Awareness Layer<br class="hidden sm:block">for AI Agents
+                The Reversibility Primitive<br class="hidden sm:block">for AI Agents
             </h1>
             <p class="text-lg sm:text-xl md:text-2xl mb-10 opacity-90 max-w-3xl mx-auto px-4">
-                Give AI agents the ability to remember, replay, and undo their actions. The infrastructure layer that makes agents self-aware.
+                The only MCP-native tool that lets any agent undo its actions — across any framework, free, forever.
             </p>
             <div class="flex flex-col sm:flex-row justify-center gap-4 mb-12 px-4">
                 <a href="https://www.npmjs.com/package/statecli-mcp-server" class="bg-white text-purple-700 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:bg-gray-100 hover-lift flex items-center justify-center gap-2">
@@ -121,22 +121,13 @@
 
     <!-- Stats Bar -->
     <div class="bg-gray-800 border-y border-gray-700 py-8">
-        <div class="max-w-5xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 text-center">
-            <div>
-                <div class="text-2xl sm:text-3xl font-bold gradient-text">27</div>
-                <div class="text-gray-400 text-sm sm:text-base">MCP Tools</div>
-            </div>
-            <div>
-                <div class="text-2xl sm:text-3xl font-bold gradient-text">2</div>
-                <div class="text-gray-400 text-sm sm:text-base">Languages</div>
-            </div>
-            <div>
-                <div class="text-2xl sm:text-3xl font-bold gradient-text">5+</div>
-                <div class="text-gray-400 text-sm sm:text-base">Integrations</div>
-            </div>
-            <div>
-                <div class="text-2xl sm:text-3xl font-bold gradient-text">MIT</div>
-                <div class="text-gray-400 text-sm sm:text-base">License</div>
+        <div class="max-w-5xl mx-auto px-4 text-center">
+            <div class="text-gray-400 text-sm sm:text-lg">
+                <span class="font-bold text-white">31 Tools</span> · 
+                <span class="font-bold text-white">MCP Native</span> · 
+                <span class="font-bold text-white">Framework Agnostic</span> · 
+                <span class="font-bold text-white">MIT License</span> · 
+                <span class="font-bold text-white">30 Second Install</span>
             </div>
         </div>
     </div>
@@ -163,36 +154,68 @@
     <!-- Why -->
     <section id="why" class="bg-gray-800 py-16">
         <div class="max-w-4xl mx-auto px-4">
-            <h2 class="text-2xl sm:text-3xl font-bold mb-8 text-center">Why Agents Need Memory + Self-Awareness</h2>
-            <p class="text-center text-gray-400 mb-8 max-w-2xl mx-auto">AI agents are powerful but blind. They don't remember what they changed, can't undo mistakes, and have no awareness of their impact. StateCLI fixes this.</p>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-8 text-center">The Problem</h2>
             <div class="grid sm:grid-cols-2 gap-6 sm:gap-8">
                 <div class="bg-gray-900 p-6 rounded-lg">
-                    <h3 class="text-xl font-semibold mb-2 text-red-400">❌ Problem</h3>
-                    <p>"I changed something but don't know what"</p>
-                    <h3 class="text-xl font-semibold mb-2 mt-4 text-green-400">✅ Solution</h3>
-                    <code class="text-blue-300">statecli_replay(entity)</code>
+                    <h3 class="text-xl font-semibold mb-2 text-red-400">❌ Agent modified files. Can't tell what changed.</h3>
+                    <h3 class="text-xl font-semibold mb-2 mt-4 text-green-400">✅ statecli_replay(entity)</h3>
                 </div>
                 <div class="bg-gray-900 p-6 rounded-lg">
-                    <h3 class="text-xl font-semibold mb-2 text-red-400">❌ Problem</h3>
-                    <p>"I broke something and need to undo"</p>
-                    <h3 class="text-xl font-semibold mb-2 mt-4 text-green-400">✅ Solution</h3>
-                    <code class="text-blue-300">statecli_undo(entity)</code>
+                    <h3 class="text-xl font-semibold mb-2 text-red-400">❌ Agent broke something. No way back.</h3>
+                    <h3 class="text-xl font-semibold mb-2 mt-4 text-green-400">✅ statecli_undo(entity)</h3>
                 </div>
                 <div class="bg-gray-900 p-6 rounded-lg">
-                    <h3 class="text-xl font-semibold mb-2 text-red-400">❌ Problem</h3>
-                    <p>"I want to try something risky"</p>
-                    <h3 class="text-xl font-semibold mb-2 mt-4 text-green-400">✅ Solution</h3>
-                    <code class="text-blue-300">statecli_checkpoint(entity)</code>
+                    <h3 class="text-xl font-semibold mb-2 text-red-400">❌ Risky operation coming. No safety net.</h3>
+                    <h3 class="text-xl font-semibold mb-2 mt-4 text-green-400">✅ statecli_checkpoint(entity)</h3>
                 </div>
                 <div class="bg-gray-900 p-6 rounded-lg">
-                    <h3 class="text-xl font-semibold mb-2 text-red-400">❌ Problem</h3>
-                    <p>"Will this change break other files?"</p>
-                    <h3 class="text-xl font-semibold mb-2 mt-4 text-green-400">✅ Solution</h3>
-                    <code class="text-blue-300">statecli_predict_impact(file)</code>
+                    <h3 class="text-xl font-semibold mb-2 text-red-400">❌ Will this change break other files?</h3>
+                    <h3 class="text-xl font-semibold mb-2 mt-4 text-green-400">✅ statecli_predict_impact(file)</h3>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
+
+    <!-- The Difference -->
+    <section class="max-w-4xl mx-auto px-4 py-16">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl sm:text-4xl font-bold mb-4 text-center">The Difference</h2>
+            <p class="text-gray-400 text-center">Other tools watch agents. StateCLI reverses them.</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-gray-800">
+                        <th class="py-4 px-4 text-gray-500 font-medium">Feature</th>
+                        <th class="py-4 px-4 text-gray-500 font-medium text-center">Observability Tools</th>
+                        <th class="py-4 px-4 text-purple-400 font-bold text-center">StateCLI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b border-gray-800">
+                        <td class="py-4 px-4">See what happened</td>
+                        <td class="py-4 px-4 text-center">✅</td>
+                        <td class="py-4 px-4 text-center font-bold">✅</td>
+                    </tr>
+                    <tr class="border-b border-gray-800">
+                        <td class="py-4 px-4">Undo what happened</td>
+                        <td class="py-4 px-4 text-center">❌</td>
+                        <td class="py-4 px-4 text-center font-bold">✅</td>
+                    </tr>
+                    <tr class="border-b border-gray-800">
+                        <td class="py-4 px-4">Works any framework</td>
+                        <td class="py-4 px-4 text-center">❌</td>
+                        <td class="py-4 px-4 text-center font-bold">✅</td>
+                    </tr>
+                    <tr class="border-b border-gray-800">
+                        <td class="py-4 px-4">Free forever</td>
+                        <td class="py-4 px-4 text-center">❌</td>
+                        <td class="py-4 px-4 text-center font-bold">✅</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
 
     <!-- Tools -->
     <section id="tools" class="max-w-4xl mx-auto px-4 py-16">
@@ -382,7 +405,7 @@ agent = initialize_agent(tools, llm)</code></pre>
                 </div>
             </div>
             <div class="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
-                <p>MIT License © 2024 StateCLI • Built for the AI agent ecosystem</p>
+                <p>MIT License © 2024 StateCLI • Built for the industry. Not for the exit.</p>
             </div>
         </div>
     </footer>

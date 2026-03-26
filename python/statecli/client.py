@@ -428,3 +428,162 @@ class StateCLI:
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
+
+    # ─── Web Knowledge Tools (parity with statecli_search_web / statecli_read_url) ─────
+
+    def search_web(self, query: str, num_results: int = 5) -> dict:
+        """Search the web via DuckDuckGo — mirrors statecli_search_web."""
+        from .knowledge import search_web as _search
+        result = _search(query, num_results)
+        return {"query": query, "results": result}
+
+    def read_url(self, url: str, query: Optional[str] = None) -> dict:
+        """Fetch and read a URL — mirrors statecli_read_url."""
+        from .knowledge import read_url as _read
+        result = _read(url, query)
+        return {"url": url, "content": result}
+
+    # ─── Memory Tools ────────────────────────────────────────────────────────────
+
+    def memory_query(self, q: str, limit: int = 10) -> dict:
+        """Query history for past actions matching a search term."""
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT * FROM state_changes
+            WHERE (entity LIKE ? OR actor LIKE ?)
+            AND undone = 0
+            ORDER BY timestamp DESC LIMIT ?
+        """, (f"%{q}%", f"%{q}%", limit))
+        rows = cursor.fetchall()
+        return {"query": q, "results": [dict(r) for r in rows], "count": len(rows)}
+
+    def recent_activity(self, limit: int = 20) -> dict:
+        """Return the most recent agent actions across all entities."""
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT entity, actor, timestamp, after_state
+            FROM state_changes WHERE undone = 0
+            ORDER BY timestamp DESC LIMIT ?
+        """, (limit,))
+        rows = cursor.fetchall()
+        return {"events": [dict(r) for r in rows]}
+
+    def session_info(self) -> dict:
+        """Return metadata about the current session."""
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT COUNT(*) as total FROM state_changes WHERE undone = 0")
+        total = cursor.fetchone()["total"]
+        cursor.execute("SELECT MIN(timestamp) as first, MAX(timestamp) as last FROM state_changes")
+        row = cursor.fetchone()
+        return {"total_events": total, "first_event": row["first"], "last_event": row["last"], "db_path": self.db_path}
+
+    # ─── Git Tools ───────────────────────────────────────────────────────────────
+
+    def git_status(self) -> dict:
+        """Get current git branch and uncommitted changes."""
+        import subprocess
+        try:
+            branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True).strip()
+            status = subprocess.check_output(["git", "status", "--short"], text=True).strip()
+            return {"branch": branch, "changes": status.splitlines()}
+        except Exception as e:
+            return {"error": str(e)}
+
+    def git_history(self, n: int = 10) -> dict:
+        """Return the last N git commits."""
+        import subprocess
+        try:
+            log = subprocess.check_output(
+                ["git", "log", f"-{n}", "--oneline", "--format=%H|%s|%an|%ar"], text=True
+            ).strip()
+            commits = []
+            for line in log.splitlines():
+                parts = line.split("|", 3)
+                if len(parts) == 4:
+                    commits.append({"hash": parts[0], "message": parts[1], "author": parts[2], "when": parts[3]})
+            return {"commits": commits}
+        except Exception as e:
+            return {"error": str(e)}
+
+    def git_checkpoint(self, name: str) -> dict:
+        """Create a checkpoint anchored to current git HEAD."""
+        import subprocess
+        try:
+            head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+            result = self.checkpoint("git:HEAD", f"{name}@{head[:8]}")
+            return {"git_hash": head, "checkpoint": result.id, "name": name}
+        except Exception as e:
+            return {"error": str(e)}
+
+    # ─── Impact & Safety Tools ───────────────────────────────────────────────────
+
+    def predict_impact(self, entity: str) -> dict:
+        """Predict which other entities may be affected by changing this one."""
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT DISTINCT entity FROM state_changes
+            WHERE actor IN (SELECT actor FROM state_changes WHERE entity = ? AND undone = 0)
+            AND entity != ? AND undone = 0
+            LIMIT 10
+        """, (entity, entity))
+        related = [r["entity"] for r in cursor.fetchall()]
+        return {"entity": entity, "possibly_affected": related, "risk_score": min(len(related) * 10, 100)}
+
+    def is_safe(self, entity: str, change_type: str = "modify") -> dict:
+        """Quick safety check — should you checkpoint before touching this entity?"""
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT COUNT(*) as cnt FROM state_changes WHERE entity = ? AND undone = 0", (entity,))
+        count = cursor.fetchone()["cnt"]
+        safe = count == 0
+        return {
+            "safe": safe,
+            "entity": entity,
+            "change_type": change_type,
+            "reason": "No existing changes — safe to proceed." if safe else f"{count} existing changes found — checkpoint first!",
+            "recommendation": "proceed" if safe else "call checkpoint() first"
+        }
+
+    def simulate_undo(self, entity: str, steps: int = 1) -> dict:
+        """Preview what would be undone without actually undoing it."""
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT id, before_state, after_state, timestamp FROM state_changes
+            WHERE entity = ? AND undone = 0
+            ORDER BY timestamp DESC LIMIT ?
+        """, (entity, steps))
+        rows = cursor.fetchall()
+        return {
+            "entity": entity,
+            "would_undo": [{"id": r["id"], "timestamp": r["timestamp"]} for r in rows],
+            "would_restore_to": json.loads(rows[-1]["before_state"]) if rows and rows[-1]["before_state"] else None
+        }
+
+    def safe_change_order(self, entities: List[str]) -> dict:
+        """Get the recommended order for changing multiple entities safely."""
+        scored = []
+        for entity in entities:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT COUNT(*) as cnt FROM state_changes WHERE entity = ? AND undone = 0", (entity,))
+            dep_count = cursor.fetchone()["cnt"]
+            scored.append((entity, dep_count))
+        scored.sort(key=lambda x: x[1])
+        return {"recommended_order": [e for e, _ in scored], "rationale": "Entities with fewer existing changes should be modified first."}
+
+    # ─── Shared Sessions ─────────────────────────────────────────────────────────
+
+    def join_session(self, namespace: str) -> dict:
+        """Join a shared multi-agent session namespace."""
+        from .shared import SharedSession
+        self._shared_session = SharedSession(namespace)
+        member = self._shared_session.join()
+        return {"namespace": namespace, "agent_id": member["agent_id"], "members": self._shared_session.list_members()}
+
+    def leave_session(self) -> dict:
+        """Leave the current shared session."""
+        if hasattr(self, "_shared_session"):
+            self._shared_session.leave()
+            ns = self._shared_session.namespace
+            del self._shared_session
+            return {"left": True, "namespace": ns}
+        return {"left": False, "reason": "Not in a shared session"}
+

@@ -7,7 +7,8 @@
   "bin": {
     "statecli": "./dist/cli.js",
     "statecli-mcp-server": "./dist/index.js",
-    "statecli-enhanced": "./dist/index-enhanced.js"
+    "statecli-enhanced": "./dist/index-enhanced.js",
+    "statecli-dashboard": "./dashboard/server.js"
   },
   "types": "./dist/index.d.ts",
   "scripts": {
@@ -17,7 +18,8 @@
     "cli": "ts-node src/cli.ts",
     "test": "jest",
     "test:watch": "jest --watch",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "dashboard": "node dashboard/server.js"
   },
   "keywords": [
     "mcp",
@@ -50,6 +52,7 @@
     "better-sqlite3": "^11.0.0",
     "chokidar": "^4.0.3",
     "commander": "^12.0.0",
+    "express": "^5.2.1",
     "node-watch": "^0.7.4",
     "uuid": "^9.0.0",
     "vectra": "^0.11.1"
@@ -69,8 +72,10 @@
   },
   "files": [
     "dist/**/*",
+    "dashboard/**/*",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "mcp-registry.json"
   ],
   "repository": {
     "type": "git",

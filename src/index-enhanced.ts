@@ -10,6 +10,7 @@
  */
 
 import { EnhancedStateCLIMCPServer } from './enhanced-mcp-server';
+export { StateCLIMiddleware } from './middleware';
 
 const server = new EnhancedStateCLIMCPServer();
 

@@ -50,4 +50,5 @@ main().catch((error) => {
 
 export { StateCLI } from './statecli';
 export { StateCLIMCPServer } from './mcp-server';
+export { StateCLIMiddleware } from './middleware';
 export * from './types';

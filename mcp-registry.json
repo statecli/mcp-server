@@ -1,0 +1,31 @@
+{
+  "name": "statecli-mcp",
+  "display_name": "StateCLI",
+  "description": "State management, checkpointing, and reversible operations for AI agents. Includes 29 tools for tracking, replaying, undoing, and securing every agent action. The safety layer for autonomous AI development.",
+  "icon": "https://statecli.dev/icon.png",
+  "version": "0.5.0",
+  "homepage": "https://statecli.dev",
+  "repository": "https://github.com/statecli/statecli-mcp-server",
+  "license": "MIT",
+  "categories": ["development", "safety", "memory", "observability"],
+  "tags": ["agent", "stateful", "reversible", "checkpoint", "undo", "memory", "telemetry", "web-search"],
+  "install": {
+    "npm": "npx statecli-mcp-server",
+    "pip": "pip install statecli"
+  },
+  "transport": ["stdio", "https"],
+  "tools": [
+    "statecli_track", "statecli_replay", "statecli_undo", "statecli_checkpoint", "statecli_log",
+    "statecli_track_file", "statecli_file_history",
+    "statecli_analyze_error", "statecli_auto_recover", "statecli_safe_execute",
+    "statecli_run_tests", "statecli_test_impact", "statecli_suggest_tests",
+    "statecli_analyze_dependencies", "statecli_dependency_tree", "statecli_find_circular",
+    "statecli_predict_impact", "statecli_is_safe", "statecli_preview_undo", "statecli_simulate_undo", "statecli_safe_change_order",
+    "statecli_memory_query", "statecli_recent_activity", "statecli_session_info",
+    "statecli_git_status", "statecli_git_history", "statecli_git_checkpoint",
+    "statecli_search_web", "statecli_read_url",
+    "statecli_join_session", "statecli_leave_session"
+  ],
+  "server_instructions": "You are operating in a stateful, reversible environment powered by StateCLI. ALWAYS checkpoint before risky actions. ALWAYS analyze errors before fixing. ALWAYS use statecli_search_web for knowledge gathering.",
+  "compatible_runtimes": ["claude-desktop", "cursor", "windsurf", "cline", "cascade"]
+}

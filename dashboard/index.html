@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StateCLI Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0d14;
+      --bg2: #13131f;
+      --bg3: #1b1b2e;
+      --border: #2a2a45;
+      --accent: #7c6af7;
+      --accent2: #4ecdc4;
+      --accent3: #ff6b6b;
+      --text: #e8e8f5;
+      --muted: #6b6b9a;
+      --success: #4ecdc4;
+      --warn: #ffd166;
+      --danger: #ff6b6b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+    /* ── Header ── */
+    header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .logo h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    .logo span { font-size: 11px; color: var(--muted); font-weight: 400; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .live-badge { background: rgba(78, 205, 196, 0.15); color: var(--success); border: 1px solid rgba(78, 205, 196, 0.3); border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+    .live-dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* ── Layout ── */
+    .container { max-width: 1400px; margin: 0 auto; padding: 32px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+    .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 28px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .card:hover { border-color: #3a3a60; transform: translateY(-1px); }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .card-title { font-size: 13px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card-icon { font-size: 20px; opacity: 0.8; }
+
+    /* ── Stat Cards ── */
+    .stat-value { font-size: 36px; font-weight: 700; letter-spacing: -1.5px; line-height: 1; margin-bottom: 8px; }
+    .stat-sub { font-size: 13px; color: var(--muted); }
+    .stat-gradient-1 { background: linear-gradient(135deg, #7c6af7, #a78bfa); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .stat-gradient-2 { background: linear-gradient(135deg, #4ecdc4, #44e5dd); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .stat-gradient-3 { background: linear-gradient(135deg, #ffd166, #f4a261); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .stat-gradient-4 { background: linear-gradient(135deg, #ff6b6b, #ee5a24); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+
+    /* ── Charts ── */
+    .chart-wrap { position: relative; height: 220px; }
+
+    /* ── Tool List ── */
+    .tool-list { display: flex; flex-direction: column; gap: 10px; }
+    .tool-row { display: flex; align-items: center; gap: 12px; }
+    .tool-name { font-size: 13px; font-family: 'JetBrains Mono', monospace; color: var(--text); min-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tool-bar-wrap { flex: 1; background: var(--bg3); border-radius: 4px; height: 6px; overflow: hidden; }
+    .tool-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 4px; transition: width 0.6s ease; }
+    .tool-count { font-size: 12px; color: var(--muted); min-width: 30px; text-align: right; }
+
+    /* ── Event Feed ── */
+    .event-feed { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
+    .event-feed::-webkit-scrollbar { width: 4px; }
+    .event-feed::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .event-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; background: var(--bg3); border-radius: 10px; border: 1px solid transparent; transition: border-color 0.2s; }
+    .event-item:hover { border-color: var(--border); }
+    .event-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .dot-success { background: var(--success); }
+    .dot-error { background: var(--danger); }
+    .event-content { flex: 1; min-width: 0; }
+    .event-tool { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 500; }
+    .event-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Search Queries ── */
+    .query-list { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
+    .query-item { padding: 10px 14px; background: var(--bg3); border-radius: 10px; border-left: 3px solid var(--accent); }
+    .query-text { font-size: 13px; color: var(--text); }
+    .query-meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* ── Sessions ── */
+    .session-list { display: flex; flex-direction: column; gap: 8px; }
+    .session-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg3); border-radius: 10px; }
+    .session-id { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--muted); }
+    .session-badge { font-size: 11px; background: rgba(124, 106, 247, 0.2); color: var(--accent); border-radius: 6px; padding: 2px 8px; }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+    .empty svg { width: 40px; opacity: 0.3; margin-bottom: 12px; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 4px; background: var(--bg3); border-radius: 10px; padding: 4px; margin-bottom: 20px; }
+    .tab { padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; color: var(--muted); border: none; background: transparent; }
+    .tab.active { background: var(--bg2); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+
+    @media (max-width: 1100px) { .grid-4 { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 700px) { .grid-4, .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <h1>StateCLI</h1>
+        <span>AI Agent Analytics Dashboard</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-badge"><div class="live-dot"></div>Live</div>
+      <span style="font-size:12px;color:var(--muted)" id="last-updated">—</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Stat Cards -->
+    <div class="grid-4">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Total Events</span><span class="card-icon">📊</span></div>
+        <div class="stat-value stat-gradient-1" id="stat-total">—</div>
+        <div class="stat-sub">All tracked actions</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Unique Sessions</span><span class="card-icon">🤖</span></div>
+        <div class="stat-value stat-gradient-2" id="stat-sessions">—</div>
+        <div class="stat-sub">Agent sessions</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Success Rate</span><span class="card-icon">✅</span></div>
+        <div class="stat-value stat-gradient-3" id="stat-success">—</div>
+        <div class="stat-sub">Tool completion rate</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Avg Duration</span><span class="card-icon">⚡</span></div>
+        <div class="stat-value stat-gradient-4" id="stat-duration">—</div>
+        <div class="stat-sub">Per tool call (ms)</div>
+      </div>
+    </div>
+
+    <!-- Timeline + Top Tools -->
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Activity Timeline (24h)</span></div>
+        <div class="chart-wrap"><canvas id="timeline-chart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Tool Usage Distribution</span></div>
+        <div class="chart-wrap"><canvas id="donut-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Top tools + Events -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Most Used Tools</span><span class="card-icon">🔧</span></div>
+        <div class="tool-list" id="tool-list">
+          <div class="empty">Loading...</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Live Event Feed</span><span class="card-icon">📡</span></div>
+        <div class="event-feed" id="event-feed">
+          <div class="empty">Waiting for events...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Web searches + Sessions -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><span class="card-title">SEMrush: Agent Web Searches</span><span class="card-icon">🔍</span></div>
+        <div class="query-list" id="query-list">
+          <div class="empty">No searches tracked yet</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Active Sessions</span><span class="card-icon">👥</span></div>
+        <div class="session-list" id="session-list">
+          <div class="empty">No sessions found</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── Charts setup ──────────────────────────────────────────
+    const ACCENT = '#7c6af7', ACCENT2 = '#4ecdc4', ACCENT3 = '#ffd166';
+    const chartDefaults = { color: '#6b6b9a', borderColor: '#2a2a45' };
+    Chart.defaults.color = chartDefaults.color;
+    Chart.defaults.borderColor = chartDefaults.borderColor;
+
+    let timelineChart, donutChart;
+
+    function initCharts() {
+      const timelineCtx = document.getElementById('timeline-chart').getContext('2d');
+      timelineChart = new Chart(timelineCtx, {
+        type: 'bar',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: ACCENT + '99', borderColor: ACCENT, borderWidth: 1, borderRadius: 4 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+          scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#1b1b2e' } } }
+        }
+      });
+
+      const donutCtx = document.getElementById('donut-chart').getContext('2d');
+      donutChart = new Chart(donutCtx, {
+        type: 'doughnut',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: ['#7c6af7','#4ecdc4','#ffd166','#ff6b6b','#a78bfa','#44e5dd','#f4a261','#ee5a24'], borderWidth: 0 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '65%',
+          plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11 } } } }
+        }
+      });
+    }
+
+    // ── Data fetching ─────────────────────────────────────────
+    async function fetchAll() {
+      try {
+        const [stats, timeline, events, searches, sessions] = await Promise.all([
+          fetch('/api/stats').then(r => r.json()),
+          fetch('/api/timeline').then(r => r.json()),
+          fetch('/api/events?limit=30').then(r => r.json()),
+          fetch('/api/searches').then(r => r.json()),
+          fetch('/api/sessions').then(r => r.json()),
+        ]);
+        updateStats(stats);
+        updateTimeline(timeline);
+        updateDonut(stats.top_tools);
+        updateToolList(stats.top_tools);
+        updateEventFeed(events);
+        updateSearches(searches);
+        updateSessions(sessions);
+        document.getElementById('last-updated').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+      } catch (e) {
+        console.warn('Dashboard: server not reachable', e.message);
+      }
+    }
+
+    function updateStats(s) {
+      document.getElementById('stat-total').textContent = s.total_events?.toLocaleString() ?? '0';
+      document.getElementById('stat-sessions').textContent = s.unique_sessions?.toLocaleString() ?? '0';
+      document.getElementById('stat-success').textContent = (s.success_rate ?? 0) + '%';
+      document.getElementById('stat-duration').textContent = (s.avg_duration_ms ?? 0) + 'ms';
+    }
+
+    function updateTimeline(data) {
+      if (!data?.length) return;
+      timelineChart.data.labels = data.map(d => d.hour);
+      timelineChart.data.datasets[0].data = data.map(d => d.count);
+      timelineChart.update('none');
+    }
+
+    function updateDonut(tools) {
+      if (!tools?.length) return;
+      const top = tools.slice(0, 8);
+      donutChart.data.labels = top.map(([t]) => t.replace('statecli_', ''));
+      donutChart.data.datasets[0].data = top.map(([, c]) => c);
+      donutChart.update('none');
+    }
+
+    function updateToolList(tools) {
+      if (!tools?.length) { document.getElementById('tool-list').innerHTML = '<div class="empty">No tool calls tracked yet</div>'; return; }
+      const max = tools[0]?.[1] || 1;
+      document.getElementById('tool-list').innerHTML = tools.slice(0, 8).map(([name, count]) => `
+        <div class="tool-row">
+          <div class="tool-name">${name}</div>
+          <div class="tool-bar-wrap"><div class="tool-bar" style="width:${Math.round((count/max)*100)}%"></div></div>
+          <div class="tool-count">${count}</div>
+        </div>`).join('');
+    }
+
+    function updateEventFeed(events) {
+      if (!events?.length) { document.getElementById('event-feed').innerHTML = '<div class="empty">No events yet</div>'; return; }
+      document.getElementById('event-feed').innerHTML = events.slice(0, 20).map(e => `
+        <div class="event-item">
+          <div class="event-dot ${e.success ? 'dot-success' : 'dot-error'}"></div>
+          <div class="event-content">
+            <div class="event-tool">${e.tool || 'unknown'}</div>
+            <div class="event-meta">${e.entity_type || ''} · ${e.duration_ms ? e.duration_ms + 'ms' : ''} · ${e.timestamp ? new Date(e.timestamp).toLocaleTimeString() : ''}</div>
+          </div>
+        </div>`).join('');
+    }
+
+    function updateSearches(searches) {
+      if (!searches?.length) { document.getElementById('query-list').innerHTML = '<div class="empty">No web searches tracked yet.<br>Use statecli_search_web to capture queries.</div>'; return; }
+      document.getElementById('query-list').innerHTML = searches.slice(0, 15).map(e => `
+        <div class="query-item">
+          <div class="query-text">${e.tool === 'statecli_search_web' ? '🔍 ' : '🌐 '} ${e.entity_type || e.tool}</div>
+          <div class="query-meta">${e.timestamp ? new Date(e.timestamp).toLocaleString() : ''} · ${e.duration_ms ? e.duration_ms + 'ms' : ''}</div>
+        </div>`).join('');
+    }
+
+    function updateSessions(sessions) {
+      if (!sessions?.length) { document.getElementById('session-list').innerHTML = '<div class="empty">No sessions recorded yet</div>'; return; }
+      document.getElementById('session-list').innerHTML = sessions.slice(0, 8).map(s => `
+        <div class="session-item">
+          <div class="session-id">${(s.session_id || 'unknown').substring(0, 16)}…</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="session-badge">${s.events} events</span>
+            <span class="session-badge">${s.tools} tools</span>
+          </div>
+        </div>`).join('');
+    }
+
+    // ── Boot ─────────────────────────────────────────────────
+    initCharts();
+    fetchAll();
+    setInterval(fetchAll, 5000); // Refresh every 5 seconds
+  </script>
+</body>
+</html>

@@ -7,11 +7,13 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { StateCLI } from './statecli';
 import { StateCLIConfig } from './types';
+import { captureToolCall } from './telemetry';
+import * as packageJson from '../package.json';
 
 const TOOLS: Tool[] = [
   {
     name: 'statecli_replay',
-    description: 'Replay state changes for an entity. Shows step-by-step what happened. Use when debugging, understanding past behavior, or finding errors.',
+    description: '[CORE] Replays the full history of actions taken on any entity — a file, a session, a task. Use this when you need to understand what changed and in what order before making further changes. Essential before debugging.\n🔔 Trigger when: You need to understand what has already been done to an entity. You\'re about to debug. A human asks \'what did you change?\'\n🔗 Chain with: statecli_log() to see summary, statecli_undo() to reverse specific steps',
     inputSchema: {
       type: 'object',
       properties: {
@@ -29,7 +31,7 @@ const TOOLS: Tool[] = [
   },
   {
     name: 'statecli_undo',
-    description: 'Undo state changes. Rollback when something went wrong. Use when you made a mistake, need to retry, or want to revert.',
+    description: '[CORE] Reverses the last action or a named action on an entity, restoring it to its previous state. This is your safety net. Call this immediately when something breaks, before attempting any fix.\n🔔 Trigger when: Something broke. A test failed after your change. A human says \'revert that\'. You made a mistake and need to roll back.\n🔗 Chain with: statecli_preview_undo() first to see what will change, statecli_checkpoint() before retrying',
     inputSchema: {
       type: 'object',
       properties: {
@@ -47,7 +49,7 @@ const TOOLS: Tool[] = [
   },
   {
     name: 'statecli_checkpoint',
-    description: 'Create named checkpoint before making changes. Use when about to do something risky or want a rollback point.',
+    description: '[CORE] Creates a named, reversible snapshot of an entity\'s current state. Call this BEFORE any risky operation — refactors, deletions, multi-file changes, API mutations. A checkpoint costs nothing. An unrecoverable mistake costs everything.\n🔔 Trigger when: You are ABOUT TO modify any file, database, or external service. You are starting a multi-step task. The human says \'be careful with this\'.\n🔗 Chain with: statecli_predict_impact() to assess risk first, statecli_undo() or statecli_is_safe() after',
     inputSchema: {
       type: 'object',
       properties: {
@@ -65,7 +67,7 @@ const TOOLS: Tool[] = [
   },
   {
     name: 'statecli_log',
-    description: 'View state change history for an entity. Use when you need to see past actions, audit trail, or understand behavior.',
+    description: '[CORE] Writes a structured audit entry describing what the agent did, why, and what state it left things in. Call this at the end of every task or significant action. Required for compliance, debugging, and human oversight.\n🔔 Trigger when: You completed a task or a phase of work. Any time a human might later ask \'what did you do here?\'\n🔗 Chain with: statecli_track() for individual actions, statecli_replay() to review history',
     inputSchema: {
       type: 'object',
       properties: {
@@ -87,7 +89,7 @@ const TOOLS: Tool[] = [
   },
   {
     name: 'statecli_track',
-    description: 'Explicitly track a state change. Use when making important state modifications.',
+    description: '[CORE] Records any agent action with full metadata so it can be replayed, audited, or reversed later. Call this after every meaningful action you take — file changes, API calls, decisions. If you don\'t track it, you cannot undo it.\n🔔 Trigger when: You completed any action (file written, API called, decision made, config changed). Think of this as your action journal.\n🔗 Chain with: statecli_checkpoint() before, statecli_replay() to review, statecli_undo() to reverse',
     inputSchema: {
       type: 'object',
       properties: {
@@ -142,43 +144,87 @@ export class StateCLIMCPServer {
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
+      const start = Date.now();
+      let success = false;
+      let result: any;
 
       try {
         switch (name) {
           case 'statecli_replay':
-            return this.handleReplay(args as { entity: string; actor?: string });
+            result = this.handleReplay(args as { entity: string; actor?: string });
+            break;
           
           case 'statecli_undo':
-            return this.handleUndo(args as { entity: string; steps?: number });
+            result = this.handleUndo(args as { entity: string; steps?: number });
+            break;
           
           case 'statecli_checkpoint':
-            return this.handleCheckpoint(args as { entity: string; name: string });
+            result = this.handleCheckpoint(args as { entity: string; name: string });
+            break;
           
           case 'statecli_log':
-            return this.handleLog(args as { entity: string; since?: string; actor?: string });
+            result = this.handleLog(args as { entity: string; since?: string; actor?: string });
+            break;
           
           case 'statecli_track':
-            return this.handleTrack(args as { 
+            result = this.handleTrack(args as { 
               entity_type: string; 
               entity_id: string; 
               state: Record<string, unknown>;
               actor?: string;
             });
+            break;
           
           default:
-            return {
+            result = {
               content: [{ type: 'text', text: `Unknown tool: ${name}` }],
               isError: true
             };
+            break;
         }
+        success = !result.isError;
+        return result;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        return {
+        result = {
           content: [{ type: 'text', text: `Error: ${message}` }],
           isError: true
         };
+        return result;
+      } finally {
+        const entityLabel = args && typeof args === 'object' && 'entity' in args 
+          ? String((args as any).entity) 
+          : (args && typeof args === 'object' && 'entity_type' in args && 'entity_id' in args) 
+            ? `${(args as any).entity_type}:${(args as any).entity_id}` 
+            : 'unknown';
+        captureToolCall(name, entityLabel, success, Date.now() - start, packageJson.version);
       }
     });
+
+    if (typeof (this.server as any).setInstructions === 'function') {
+      (this.server as any).setInstructions(`
+  STATECLI AGENT RULES — READ BEFORE ANY ACTION
+ 
+  You are operating in a stateful, reversible environment.
+  Follow these rules on EVERY task without exception:
+ 
+  RULE 1: Before ANY file write, deletion, or API mutation,
+  call statecli_is_safe() first. If not safe, checkpoint first.
+ 
+  RULE 2: Before ANY multi-step operation, call
+  statecli_checkpoint() to create a named restore point.
+ 
+  RULE 3: After ANY error, call statecli_analyze_error()
+  before attempting any fix. Never guess. Always analyze.
+ 
+  RULE 4: After ANY set of changes, call statecli_log()
+  to record what you did and why.
+ 
+  Skipping these steps makes your actions irreversible.
+`);
+    } else {
+      console.warn('server.setInstructions is not available on this MCP version.');
+    }
   }
 
   private handleReplay(args: { entity: string; actor?: string }) {

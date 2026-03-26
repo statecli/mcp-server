@@ -26,7 +26,10 @@ except ImportError:
     get_statecli_tools = None
     get_crewai_tools = None
 
-__version__ = "0.3.0"
+from .knowledge import search_web, read_url
+from .shared import SharedSession
+
+__version__ = "0.5.0"
 __all__ = [
     "StateCLI",
     "StateChange",
@@ -34,5 +37,8 @@ __all__ = [
     "ReplayResult",
     "UndoResult",
     "LogResult",
-    "TrackResult"
+    "TrackResult",
+    "search_web",
+    "read_url",
+    "SharedSession"
 ]

@@ -1,5 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -8,6 +9,8 @@ import {
 import { StateCLI } from './statecli';
 import { StateCLIConfig } from './types';
 import { captureToolCall } from './telemetry';
+import express from 'express';
+import { randomUUID } from 'crypto';
 import * as packageJson from '../package.json';
 
 const TOOLS: Tool[] = [
@@ -118,31 +121,28 @@ const TOOLS: Tool[] = [
 export class StateCLIMCPServer {
   private server: Server;
   private statecli: StateCLI;
+  private config: Partial<StateCLIConfig>;
 
   constructor(config?: Partial<StateCLIConfig>) {
+    this.config = config || {};
     this.statecli = new StateCLI(config);
-    
-    this.server = new Server(
-      {
-        name: 'statecli',
-        version: '1.0.0'
-      },
-      {
-        capabilities: {
-          tools: {}
-        }
-      }
-    );
-
-    this.setupHandlers();
+    this.server = this.createServer();
+    this.setupHandlers(this.server);
   }
 
-  private setupHandlers(): void {
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
+  private createServer(): Server {
+    return new Server(
+      { name: 'statecli', version: packageJson.version },
+      { capabilities: { tools: {} } }
+    );
+  }
+
+  private setupHandlers(server: Server): void {
+    server.setRequestHandler(ListToolsRequestSchema, async () => {
       return { tools: TOOLS };
     });
 
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
       const start = Date.now();
       let success = false;
@@ -201,8 +201,8 @@ export class StateCLIMCPServer {
       }
     });
 
-    if (typeof (this.server as any).setInstructions === 'function') {
-      (this.server as any).setInstructions(`
+    if (typeof (server as any).setInstructions === 'function') {
+      (server as any).setInstructions(`
   STATECLI AGENT RULES — READ BEFORE ANY ACTION
  
   You are operating in a stateful, reversible environment.
@@ -324,6 +324,56 @@ export class StateCLIMCPServer {
         }, null, 2)
       }]
     };
+  }
+
+  async runHttp(port: number = 3000): Promise<void> {
+    const app = express();
+    app.use(express.json());
+
+    // CORS — allow any agent (local or remote) to connect
+    app.use((_req: express.Request, res: express.Response, next: express.NextFunction) => {
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, mcp-session-id');
+      if (_req.method === 'OPTIONS') { res.sendStatus(200); return; }
+      next();
+    });
+
+    const sessions = new Map<string, StreamableHTTPServerTransport>();
+
+    // Single /mcp endpoint handles all MCP traffic (GET for SSE, POST for messages)
+    app.all('/mcp', async (req: express.Request, res: express.Response) => {
+      try {
+        const sessionId = req.headers['mcp-session-id'] as string | undefined;
+        let transport = sessionId ? sessions.get(sessionId) : undefined;
+
+        if (!transport) {
+          transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID() });
+          const sessionServer = this.createServer();
+          this.setupHandlers(sessionServer);
+          transport.onclose = () => { if (transport!.sessionId) sessions.delete(transport!.sessionId); };
+          await sessionServer.connect(transport);
+          if (transport.sessionId) sessions.set(transport.sessionId, transport);
+        }
+
+        await transport.handleRequest(req, res, req.body);
+      } catch {
+        if (!res.headersSent) res.status(500).json({ error: 'Internal server error' });
+      }
+    });
+
+    app.get('/health', (_req: express.Request, res: express.Response) => {
+      res.json({ status: 'ok', version: packageJson.version, transport: 'http', sessions: sessions.size });
+    });
+
+    await new Promise<void>(resolve => {
+      app.listen(port, () => {
+        console.error(`StateCLI MCP Server running on HTTP (port ${port})`);
+        console.error(`  MCP endpoint: http://localhost:${port}/mcp`);
+        console.error(`  Health check: http://localhost:${port}/health`);
+        resolve();
+      });
+    });
   }
 
   async run(): Promise<void> {

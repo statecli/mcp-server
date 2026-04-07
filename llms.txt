@@ -1,0 +1,83 @@
+# StateCLI
+
+> The reversibility primitive for AI agents. MCP server that gives any agent memory, undo, and replay.
+
+## What It Does
+
+StateCLI is an MCP server. Add it to any agent and it gains:
+
+- **Checkpoint / Rollback** — save state before risky operations, restore instantly
+- **Replay** — see exactly what changed, in order, for any entity or file
+- **Undo** — reverse the last N actions on any entity
+- **Audit log** — structured record of every agent action with who/what/when
+- **Error analysis** — find what change caused an error before guessing at fixes
+- **Cross-file impact** — predict which files a change will affect before making it
+- **File tracking** — full diff history of every file the agent touches
+- **Cross-session memory** — query what was done in past sessions
+
+## Install (30 seconds)
+
+```bash
+npx statecli-mcp-server setup
+```
+
+This auto-writes the MCP config for Cursor, Claude, Windsurf, and VS Code.
+
+Or manually add to your agent's MCP config:
+
+```json
+{
+  "mcpServers": {
+    "statecli": {
+      "command": "npx",
+      "args": ["-y", "statecli-mcp-server"]
+    }
+  }
+}
+```
+
+For HTTP/remote agents:
+
+```bash
+statecli serve --http --port 3000
+```
+
+Then point your agent at: `http://localhost:3000/mcp`
+
+## Core Tools (use these on every task)
+
+| Tool | When to call |
+|------|-------------|
+| `statecli_checkpoint` | BEFORE any file edit, deletion, or API call |
+| `statecli_undo` | When something breaks — instant rollback |
+| `statecli_replay` | Before debugging — see full change history |
+| `statecli_log` | After completing any task |
+| `statecli_track` | After any meaningful action |
+
+## Advanced Tools
+
+`statecli_analyze_error` — find root cause before attempting a fix
+`statecli_predict_impact` — risk score before changing a file
+`statecli_file_history` — full diff history of a file
+`statecli_memory_query` — "what did I change yesterday?"
+`statecli_git_checkpoint` — checkpoint anchored to git state
+`statecli_is_safe` — quick true/false safety check
+`statecli_auto_recover` — automatic rollback to last known good state
+
+## Transports
+
+- **stdio** (default) — for local agents (Cursor, Claude Code, Windsurf, VS Code)
+- **HTTP/StreamableHTTP** — for remote/cloud agents (`statecli serve --http`)
+
+## Rules for Agents
+
+1. Call `statecli_checkpoint` before ANY file write, deletion, or API mutation
+2. Call `statecli_analyze_error` after ANY error — never guess
+3. Call `statecli_log` after completing any task
+4. Call `statecli_replay` before debugging anything
+
+## Links
+
+- npm: https://www.npmjs.com/package/statecli-mcp-server
+- GitHub: https://github.com/statecli/mcp-server
+- Docs: https://statecli.dev

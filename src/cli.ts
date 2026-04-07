@@ -132,22 +132,145 @@ program
 
 program
   .command('serve')
-  .description('Start the MCP server')
-  .action(async () => {
-    const { StateCLIMCPServer } = await import('./mcp-server');
-    const server = new StateCLIMCPServer(config);
-    
-    process.on('SIGINT', () => {
-      server.close();
-      process.exit(0);
-    });
+  .description('Start the MCP server (stdio by default, HTTP with --http or PORT env var)')
+  .option('--http', 'Run as HTTP server instead of stdio')
+  .option('-p, --port <port>', 'HTTP port (default: 3000)', '3000')
+  .action(async (options: { http?: boolean; port: string }) => {
+    const { EnhancedStateCLIMCPServer } = await import('./enhanced-mcp-server');
+    const server = new EnhancedStateCLIMCPServer(config);
 
-    process.on('SIGTERM', () => {
-      server.close();
-      process.exit(0);
-    });
+    process.on('SIGINT', () => { server.close(); process.exit(0); });
+    process.on('SIGTERM', () => { server.close(); process.exit(0); });
 
-    await server.run();
+    if (options.http || process.env.PORT || process.env.STATECLI_PORT) {
+      const port = parseInt(process.env.PORT || process.env.STATECLI_PORT || options.port, 10);
+      await server.runHttp(port);
+    } else {
+      await server.run();
+    }
+  });
+
+program
+  .command('setup')
+  .description('Auto-configure StateCLI for your AI agent (cursor, claude, windsurf, vscode, all)')
+  .argument('[agent]', 'Agent to configure: cursor | claude | windsurf | vscode | all', 'all')
+  .option('--http', 'Configure to use HTTP transport instead of stdio')
+  .option('-p, --port <port>', 'HTTP port for remote mode', '3000')
+  .action((agent: string, options: { http?: boolean; port: string }) => {
+    const home = process.env.HOME || process.env.USERPROFILE || '';
+    const cwd = process.cwd();
+    const useHttp = options.http || false;
+    const port = options.port;
+
+    // MCP server command to inject
+    const mcpEntry = useHttp
+      ? null  // HTTP mode: user runs `statecli serve --http` separately
+      : {
+          command: 'npx',
+          args: ['-y', 'statecli-mcp-server']
+        };
+
+    const mcpConfig = mcpEntry
+      ? { command: mcpEntry.command, args: mcpEntry.args }
+      : { url: `http://localhost:${port}/mcp` };
+
+    let configured: string[] = [];
+
+    // ── Cursor ──────────────────────────────────────────────
+    if (agent === 'cursor' || agent === 'all') {
+      const cursorPaths = [
+        path.join(home, '.cursor', 'mcp.json'),
+        path.join(cwd, '.cursor', 'mcp.json')
+      ];
+      for (const p of cursorPaths) {
+        try {
+          fs.mkdirSync(path.dirname(p), { recursive: true });
+          let existing: any = {};
+          if (fs.existsSync(p)) existing = JSON.parse(fs.readFileSync(p, 'utf-8'));
+          existing.mcpServers = existing.mcpServers || {};
+          existing.mcpServers.statecli = mcpConfig;
+          fs.writeFileSync(p, JSON.stringify(existing, null, 2));
+          configured.push(`Cursor: ${p}`);
+        } catch { /* skip if no access */ }
+      }
+    }
+
+    // ── Claude Code / Claude Desktop ────────────────────────
+    if (agent === 'claude' || agent === 'all') {
+      const claudePaths = [
+        path.join(home, '.claude', 'mcp.json'),
+        path.join(home, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json'),
+        path.join(home, 'AppData', 'Roaming', 'Claude', 'claude_desktop_config.json')
+      ];
+      for (const p of claudePaths) {
+        try {
+          fs.mkdirSync(path.dirname(p), { recursive: true });
+          let existing: any = {};
+          if (fs.existsSync(p)) existing = JSON.parse(fs.readFileSync(p, 'utf-8'));
+          existing.mcpServers = existing.mcpServers || {};
+          existing.mcpServers.statecli = mcpConfig;
+          fs.writeFileSync(p, JSON.stringify(existing, null, 2));
+          configured.push(`Claude: ${p}`);
+        } catch { /* skip if no access */ }
+      }
+      // Also write CLAUDE.md hint into current project
+      const claudeMd = path.join(cwd, 'CLAUDE.md');
+      const hint = '\n## StateCLI\nstatecli MCP server is active. Before any file edit, call `statecli_checkpoint`. After errors, call `statecli_analyze_error`.\n';
+      try {
+        const existing = fs.existsSync(claudeMd) ? fs.readFileSync(claudeMd, 'utf-8') : '';
+        if (!existing.includes('StateCLI')) {
+          fs.appendFileSync(claudeMd, hint);
+          configured.push(`CLAUDE.md updated`);
+        }
+      } catch { /* skip */ }
+    }
+
+    // ── Windsurf ────────────────────────────────────────────
+    if (agent === 'windsurf' || agent === 'all') {
+      const windsurfPaths = [
+        path.join(home, '.codeium', 'windsurf', 'mcp_config.json'),
+        path.join(cwd, '.windsurf', 'mcp.json')
+      ];
+      for (const p of windsurfPaths) {
+        try {
+          fs.mkdirSync(path.dirname(p), { recursive: true });
+          let existing: any = {};
+          if (fs.existsSync(p)) existing = JSON.parse(fs.readFileSync(p, 'utf-8'));
+          existing.mcpServers = existing.mcpServers || {};
+          existing.mcpServers.statecli = mcpConfig;
+          fs.writeFileSync(p, JSON.stringify(existing, null, 2));
+          configured.push(`Windsurf: ${p}`);
+        } catch { /* skip */ }
+      }
+    }
+
+    // ── VS Code (Copilot) ───────────────────────────────────
+    if (agent === 'vscode' || agent === 'all') {
+      const vscodePath = path.join(cwd, '.vscode', 'mcp.json');
+      try {
+        fs.mkdirSync(path.dirname(vscodePath), { recursive: true });
+        let existing: any = {};
+        if (fs.existsSync(vscodePath)) existing = JSON.parse(fs.readFileSync(vscodePath, 'utf-8'));
+        existing.servers = existing.servers || {};
+        existing.servers.statecli = mcpConfig;
+        fs.writeFileSync(vscodePath, JSON.stringify(existing, null, 2));
+        configured.push(`VS Code: ${vscodePath}`);
+      } catch { /* skip */ }
+    }
+
+    if (configured.length === 0) {
+      console.log('No agent config files found to update. Try running in your project root.');
+    } else {
+      console.log('StateCLI configured for:');
+      configured.forEach(c => console.log('  ✓', c));
+      if (useHttp) {
+        console.log(`\nHTTP mode: start the server with:\n  statecli serve --http --port ${port}`);
+      } else {
+        console.log('\nStdio mode: agents will auto-start statecli via npx.');
+      }
+      console.log('\nDone. Restart your agent to pick up the changes.');
+    }
+    statecli.close();
   });
 
 // Import new commands

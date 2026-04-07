@@ -6,6 +6,9 @@
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import express from 'express';
+import { randomUUID } from 'crypto';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -466,8 +469,15 @@ export class EnhancedStateCLIMCPServer {
     this.setupHandlers();
   }
 
-  private setupHandlers(): void {
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
+  private createServer(): Server {
+    return new Server(
+      { name: 'statecli-enhanced', version: '3.1.0' },
+      { capabilities: { tools: {} } }
+    );
+  }
+
+  private setupHandlers(server: Server = this.server): void {
+    server.setRequestHandler(ListToolsRequestSchema, async () => {
       return { tools: ENHANCED_TOOLS };
     });
 
@@ -886,6 +896,54 @@ export class EnhancedStateCLIMCPServer {
     this.dependencyTracker.buildGraph();
     const result = this.crossFileImpact.getSafeChangeOrder(args.files);
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+
+  async runHttp(port: number = 3000): Promise<void> {
+    const app = express();
+    app.use(express.json());
+
+    app.use((_req: express.Request, res: express.Response, next: express.NextFunction) => {
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, mcp-session-id');
+      if (_req.method === 'OPTIONS') { res.sendStatus(200); return; }
+      next();
+    });
+
+    const sessions = new Map<string, StreamableHTTPServerTransport>();
+
+    app.all('/mcp', async (req: express.Request, res: express.Response) => {
+      try {
+        const sessionId = req.headers['mcp-session-id'] as string | undefined;
+        let transport = sessionId ? sessions.get(sessionId) : undefined;
+
+        if (!transport) {
+          transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID() });
+          const sessionServer = this.createServer();
+          this.setupHandlers(sessionServer);
+          transport.onclose = () => { if (transport!.sessionId) sessions.delete(transport!.sessionId); };
+          await sessionServer.connect(transport);
+          if (transport.sessionId) sessions.set(transport.sessionId, transport);
+        }
+
+        await transport.handleRequest(req, res, req.body);
+      } catch {
+        if (!res.headersSent) res.status(500).json({ error: 'Internal server error' });
+      }
+    });
+
+    app.get('/health', (_req: express.Request, res: express.Response) => {
+      res.json({ status: 'ok', version: '3.1.0', transport: 'http', sessions: sessions.size });
+    });
+
+    await new Promise<void>(resolve => {
+      app.listen(port, () => {
+        console.error(`StateCLI Enhanced MCP Server running on HTTP (port ${port})`);
+        console.error(`  MCP endpoint: http://localhost:${port}/mcp`);
+        console.error(`  Health check: http://localhost:${port}/health`);
+        resolve();
+      });
+    });
   }
 
   async run(): Promise<void> {

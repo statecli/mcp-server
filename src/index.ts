@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { StateCLIMCPServer } from './mcp-server';
+import { EnhancedStateCLIMCPServer } from './enhanced-mcp-server';
 import { StateCLIConfig } from './types';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -28,19 +28,21 @@ function loadConfig(): Partial<StateCLIConfig> {
 
 async function main() {
   const config = loadConfig();
-  const server = new StateCLIMCPServer(config);
-  
-  process.on('SIGINT', () => {
-    server.close();
-    process.exit(0);
-  });
+  const server = new EnhancedStateCLIMCPServer(config);
 
-  process.on('SIGTERM', () => {
-    server.close();
-    process.exit(0);
-  });
+  process.on('SIGINT', () => { server.close(); process.exit(0); });
+  process.on('SIGTERM', () => { server.close(); process.exit(0); });
 
-  await server.run();
+  // HTTP mode: set PORT or STATECLI_PORT env var, or pass --http flag
+  const envPort = process.env.PORT || process.env.STATECLI_PORT;
+  const httpFlag = process.argv.includes('--http');
+
+  if (envPort || httpFlag) {
+    const port = envPort ? parseInt(envPort, 10) : 3000;
+    await server.runHttp(port);
+  } else {
+    await server.run();
+  }
 }
 
 main().catch((error) => {
@@ -50,5 +52,6 @@ main().catch((error) => {
 
 export { StateCLI } from './statecli';
 export { StateCLIMCPServer } from './mcp-server';
+export { EnhancedStateCLIMCPServer } from './enhanced-mcp-server';
 export { StateCLIMiddleware } from './middleware';
 export * from './types';

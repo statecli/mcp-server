@@ -168,7 +168,7 @@ export class FileWatcher {
 
     getStats(): { filesTracked: number; lastCheckpoint: Date } {
         return {
-            filesTracked: 0, // TODO: implement
+            filesTracked: this.fileSnapshots.size,
             lastCheckpoint: new Date(this.lastCheckpoint)
         };
     }
